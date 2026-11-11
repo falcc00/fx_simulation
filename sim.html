@@ -35,6 +35,9 @@ const TY={S:{l:20,p:-.55,c:'#ef4444'},M:{l:30,p:-.2,c:'#facc15'},H:{l:42,p:0,c:'
 const MM={dry:{S:0,M:0,H:0,I:4,W:6},inter:{S:7,M:7,H:7,I:0,W:1.5},wet:{S:10,M:10,H:10,I:2.5,W:0}},SL={dry:0,inter:.06,wet:.1},WX={dry:'Dry',inter:'Intermediate',wet:'Wet'};
 const ic=(p)=>`<svg class="i" viewBox="0 0 24 24"><path d="${p}"/></svg>`;
 const I={play:ic('M6 4l14 8-14 8z'),skip:ic('M5 4l10 8-10 8zM19 5v14'),zap:ic('M13 2 4 14h7l-1 8 9-12h-7z')};
+const DF=[.5,.6,.7,.4,.3,.4,.4,1,.7,.4,.6,.4,.9,.8,0,.6,.3,.95,.5,.6,.6,.1,.7,.5],KIND=['FP','FP','FP','Q','R'];
+const PARTS=[{id:'fw',n:'Front Wing',e:{aero:2.5}},{id:'rw',n:'Rear Wing',e:{aero:1.5,spd:1}},{id:'fl',n:'Floor',e:{aero:3}},{id:'sp',n:'Sidepods & Cooling',e:{spd:1.5,rel:1}},{id:'su',n:'Suspension',e:{mech:2.5,care:1.5}},{id:'br',n:'Brakes',e:{mech:1.5,rel:1}},{id:'gb',n:'Gearbox',e:{spd:1.5,rel:1.5}},{id:'wr',n:'Weight Reduction',e:{mech:1.2,spd:1.2}}];
+const SN={aero:'Downforce',spd:'Top speed',mech:'Mechanical',care:'Tyre care',rel:'Reliability'};
 let D,G,V='hub',TAB='race',S=null,TM=null,TR=null;
 const lerp=(v,[a,b],[c,d])=>Math.round(c+(clamp(v,a,b)-a)/(b-a)*(d-c));
 const dcost=d=>lerp(d.r,D.meta[d.s].ovr,D.meta[d.s].cost),price=d=>Math.round(dcost(d)*1.5);
@@ -45,13 +48,14 @@ const C=()=>D.circuits[Math.min(G.round,23)],tc=t=>G.teams[t].c,sh=d=>d.n.replac
 const myIds=()=>Object.values(G.drv).filter(d=>d.t=='P').map(d=>d.id);
 const engOf=d=>d.t=='P'?Object.values(G.eng).find(e=>e.own&&e.dv==d.id):null;
 const eff=(d,k)=>{if(d.t!='P')return d[k];const e=engOf(d);return d[k]*.65+(e?e[k]:55)*.35};
-const carEff=d=>d.t=='P'?G.chassis*.6+G.pu.pw*.4:G.teams[d.t].car;
+const chassis=()=>{const c=G.car,df=DF[Math.min(G.round,23)];return (c.aero*df+c.spd*(1-df))*.65+c.mech*.35};
+const carEff=d=>d.t=='P'?chassis()*.6+G.pu.pw*.4:G.teams[d.t].car;
 const base=d=>C()[2]-(carEff(d)*.6+d.r*.4-80)*.12-(d.cor-75)*.012;
 const ft=s=>Math.floor(s/60)+':'+(s%60).toFixed(3).padStart(6,'0');
 const stats=d=>`<span class="mono stt">ATT <b>${d.att}</b> DEF <b>${d.def}</b> TYR <b>${d.tyr}</b> COR <b>${d.cor}</b></span>`;
 const estats=e=>`<span class="mono stt">ATT <b>${e.att}</b> DEF <b>${e.def}</b> TYR <b>${e.tyr}</b></span>`;
 function build(su){
- G={season:2026,round:0,money:40,news:[],dp:{},tp:{},teams:{},drv:{},eng:{},wk:null,name:su.name,color:su.color,chassis:66,pu:{n:D.pu[su.pu][1],pw:D.pu[su.pu][2],rel:D.pu[su.pu][3],eff:D.pu[su.pu][4]}};
+ G={season:2026,round:0,money:40,news:[],dp:{},tp:{},teams:{},drv:{},eng:{},wk:null,name:su.name,color:su.color,car:{aero:62,spd:62,mech:62,care:60,rel:0},parts:{},rd:[],wt:0,pu:{n:D.pu[su.pu][1],pw:D.pu[su.pu][2],rel:D.pu[su.pu][3],eff:D.pu[su.pu][4]}};
  D.teams.forEach(t=>G.teams[t[0]]={n:t[1],c:t[2],car:t[3]});G.teams.P={n:su.name,c:su.color};
  D.drivers.forEach((d,i)=>G.drv[i]={id:i,n:d[0],s:d[1],r:d[2],att:d[3],def:d[4],tyr:d[5],cor:d[6],t:d[7]||'FA'});
  su.drv.forEach(i=>G.drv[i].t='P');
@@ -72,9 +76,9 @@ function hub(){
  if(TAB=='race'){
   h+=`<div class="card"><h3>Round ${G.round+1} / 24</h3><h1>${c[0]} GP</h1><div class="m">${c[1]} laps · ref. lap ${ft(c[2])} · Weather: <b style="color:var(--t)">${WX[w.wx]}</b></div>
   <div class="steps">${STEPS.map((s,i)=>`<div class="st ${i<w.step?'d':i==w.step?'c':''}">${s}</div>`).join('')}</div>
-  <button class="p" onclick="startS('${['FP','FP','FP','Q','R'][w.step]}')">${I.play} Start ${STEPS[w.step]}</button></div>
+  <div class="row"><button class="p" onclick="startS('${KIND[w.step]}')">${I.play} Start ${STEPS[w.step]}</button>${w.step<4?`<button onclick="startS('${KIND[w.step]}',true)">${I.zap} Auto-run to Quali</button>`:''}</div></div>
   <div class="card"><h3>Your drivers</h3>${myIds().map(i=>{const d=G.drv[i],e=engOf(d);return `<div style="margin-bottom:10px"><div class="row"><span class="dot" style="background:${G.color}"></span><b>${d.n}</b><span class="m">${d.s}</span><span class="sp"></span><span class="mono">OVR ${d.r} · ${G.dp[i]||0} pts</span></div>${stats(d)}<div class="m">Engineer: ${e?e.n:'none (hire one in Engineers)'}</div></div>`}).join('')}</div>`;
-  if(G.news.length)h+=`<div class="card"><h3>Grid reshuffle ${G.season}</h3>${G.news.map(n=>`<div class="m">${n}</div>`).join('')}</div>`;
+  if(G.news.length)h+=`<div class="card"><h3>News</h3>${G.news.map(n=>`<div class="m">${n}</div>`).join('')}</div>`;
  }
  if(TAB=='std'){
   const ds=Object.keys(G.dp).map(Number).sort((a,b)=>G.dp[b]-G.dp[a]),ts=Object.keys(G.teams).sort((a,b)=>(G.tp[b]||0)-(G.tp[a]||0));
@@ -91,26 +95,39 @@ function hub(){
   h+=`<div class="card"><h3>Your engineers (${mine.length}/2)</h3>${mine.length?mine.map(e=>`<div style="margin-bottom:12px"><div class="row"><b>${e.n}</b>${estats(e)}</div><div class="row" style="margin-top:6px"><span class="m">Assigned: ${e.dv!=null?G.drv[e.dv].n:'—'}</span>${myIds().map(i=>`<button class="s ${e.dv==i?'on':''}" onclick="assign(${e.id},${i})">${sh(G.drv[i])}</button>`).join('')}<button class="s" onclick="G.eng[${e.id}].own=false;G.eng[${e.id}].dv=null;hub()">Release</button></div></div>`).join(''):'<div class="m">No engineers hired. Drivers without one get a weak default (55).</div>'}</div>
   <div class="card wrap"><h3>Engineer market</h3><table>${mk.map(e=>`<tr><td>${e.n}</td><td>${estats(e)}</td><td class="mono">$${ecost(e)}M</td><td><button class="s" onclick="hire(${e.id})">Hire</button></td></tr>`).join('')}</table></div>`;
  }
- if(TAB=='car'){
-  const cost=Math.round(8+Math.max(0,G.chassis-65)*.8);
-  h+=`<div class="card"><h3>Chassis</h3><h1 class="mono">${G.chassis}</h1><div class="bar"><i style="width:${G.chassis}%"></i></div><p class="m">Each upgrade adds +2.</p><button class="p" onclick="upg(${cost})">Upgrade · $${cost}M</button></div>
-  <div class="card"><h3>Power unit</h3><b>${G.pu.n}</b><div class="mono m" style="margin-top:6px">POWER ${G.pu.pw} · RELIABILITY ${G.pu.rel} · EFFICIENCY ${G.pu.eff}</div></div>`;
- }
+ if(TAB=='car')h+=carTab();
  $('#app').innerHTML=h;
 }
-function upg(c){if(c>G.money)return toast('Not enough budget');G.money-=c;G.chassis+=2;hub()}
+const pcost=(p,l)=>Math.round(5+l*3+Object.values(p.e).reduce((a,b)=>a+b,0)*2),pch=l=>clamp(.65+G.wt*.05-l*.04,.3,.95);
+function carTab(){
+ const c=G.car,df=DF[Math.min(G.round,23)],bar=(n,v)=>`<div class="row" style="margin:4px 0"><span style="width:110px" class="m">${n}</span><div class="bar sp"><i style="width:${clamp(v,0,100)}%"></i></div><span class="mono">${v.toFixed(1)}</span></div>`;
+ let h=`<div class="card"><h3>Car · ${C()[0]} GP</h3><div class="m" style="margin-bottom:8px">Circuit is ${Math.round(df*100)}% downforce-dependent · effective chassis <b style="color:var(--t)">${chassis().toFixed(1)}</b></div>${bar('Downforce',c.aero)}${bar('Top speed',c.spd)}${bar('Mechanical',c.mech)}${bar('Tyre care',c.care)}${bar('Reliability',G.pu.rel+c.rel)}</div>
+ <div class="card"><h3>Power unit</h3><b>${G.pu.n}</b><div class="mono m" style="margin-top:6px">POWER ${G.pu.pw} · RELIABILITY ${G.pu.rel} · EFFICIENCY ${G.pu.eff}</div></div>
+ <div class="card"><div class="row"><h3 style="margin:0">Wind tunnel & CFD</h3><span class="sp"></span><span class="mono">Lv ${G.wt}/5</span></div><p class="m">Raises R&D success chance by 5% per level.</p><button ${G.wt>=5?'disabled':''} onclick="facUp()">Upgrade · $${12+G.wt*8}M</button></div>
+ <div class="card wrap"><h3>R&D projects (${G.rd.length}/2 active)</h3>${G.rd.map(r=>`<div class="row" style="margin-bottom:6px"><b>${PARTS.find(p=>p.id==r.id).n}</b><span class="m">${r.left} race(s) left</span></div>`).join('')}
+ <table><tr><th>Part</th><th>Level</th><th>Effect</th><th>Success</th><th>Time</th><th>Cost</th><th></th></tr>${PARTS.map(p=>{const l=G.parts[p.id]||0,act=G.rd.some(r=>r.id==p.id),cost=pcost(p,l);return `<tr><td>${p.n}</td><td class="mono">${l}/6</td><td class="m">${Object.entries(p.e).map(([k,v])=>`+${v} ${SN[k]}`).join(', ')}</td><td class="mono">${Math.round(pch(l)*100)}%</td><td class="mono">${l>=3?3:2} races</td><td class="mono">$${cost}M</td><td><button class="s" ${act||l>=6||G.rd.length>=2?'disabled':''} onclick="startRD('${p.id}')">${act?'In progress':'Develop'}</button></td></tr>`}).join('')}</table></div>`;
+ return h}
+function facUp(){const c=12+G.wt*8;if(c>G.money)return toast('Not enough budget');G.money-=c;G.wt++;hub()}
+function startRD(id){const p=PARTS.find(x=>x.id==id),l=G.parts[id]||0,c=pcost(p,l);if(G.rd.length>=2)return toast('Max 2 projects');if(c>G.money)return toast('Not enough budget');G.money-=c;G.rd.push({id,left:l>=3?3:2});hub()}
+const applyP=(p,k)=>{for(const x in p.e)G.car[x]+=p.e[x]*k}
+function rdTick(){const out=[];G.rd=G.rd.filter(r=>{if(--r.left>0)return true;const p=PARTS.find(x=>x.id==r.id),l=G.parts[r.id]||0,ch=pch(l),x=Math.random(),dm=1-l*.08;
+ if(x<ch){applyP(p,dm);G.parts[p.id]=l+1;out.push(`R&D: ${p.n} Lv${l+1} — success`)}
+ else if(x<ch+.15){applyP(p,dm*.5);G.parts[p.id]=l+1;out.push(`R&D: ${p.n} Lv${l+1} — partial gain`)}
+ else out.push(`R&D: ${p.n} — failed, no correlation with wind tunnel data`);return false});return out}
 function hire(id){const e=G.eng[id];if(Object.values(G.eng).filter(x=>x.own).length>=2)return toast('Max 2 engineers');if(ecost(e)>G.money)return toast('Not enough budget');G.money-=ecost(e);e.own=true;hub()}
 function assign(id,dv){Object.values(G.eng).forEach(x=>{if(x.dv==dv)x.dv=null});G.eng[id].dv=dv;hub()}
 function trade(t,m){const a=G.drv[t],b=G.drv[m],c=price(a)-Math.round(price(b)/2);if(c>G.money){TR=null;hub();return toast('Not enough budget')}
  G.money-=c;Object.values(G.eng).forEach(x=>{if(x.dv==m)x.dv=null});b.t=a.t;a.t='P';TR=null;toast(a.n+' joined your team!');hub()}
-function startS(k){
+function startS(k,chain){
  const L=Object.values(G.drv).filter(d=>d.t!='FA').map(d=>d.id);
- S={k,ids:L,tick:0,best:{},push:3,boost:0,seg:0,elim:[[],[]],act:L.slice(),lap:0,done:false,N:k=='R'?C()[1]:k=='Q'?150:50};
+ S={k,ids:L,tick:0,best:{},push:3,boost:0,seg:0,elim:[[],[]],act:L.slice(),lap:0,sc:0,chain:!!chain,done:false,N:k=='R'?C()[1]:k=='Q'?150:50};
  if(k=='R'){const wx=G.wk.wx;S.cars=G.wk.grid.map((id,p)=>{const ty=wx=='wet'?'W':wx=='inter'?'I':['S','M','M','H','H'][Math.floor(Math.random()*5)];return{id,t:p*.3,w:0,pits:0,tyre:ty,used:[ty],dnf:false,form:rnd(-.4,.4),th:rnd(0,.1)}})}
  V='ses';render();clearInterval(TM);TM=setInterval(step,k=='R'?350:400);
 }
-function step(){S.k=='R'?raceStep():fpStep();if(S.done)clearInterval(TM);draw();ctl()}
-function skip(){while(!S.done)S.k=='R'?raceStep():fpStep();clearInterval(TM);draw();ctl()}
+function fin(){clearInterval(TM);if(S.chain&&S.k!='R'&&!S.nx){S.nx=1;setTimeout(autoNext,1100)}}
+function autoNext(){if(!S||!S.done)return;G.wk.step++;if(G.wk.step<=3)startS(KIND[G.wk.step],true);else{V='hub';render()}}
+function step(){S.k=='R'?raceStep():fpStep();if(S.done)fin();draw();ctl()}
+function skip(){while(!S.done)S.k=='R'?raceStep():fpStep();fin();draw();ctl()}
 function lapTry(id,pr){const d=G.drv[id],mine=d.t=='P';
  if(Math.random()>pr+(mine&&S.boost>0?.25:0))return;if(mine&&S.boost>0&&Math.random()<.12)return;
  const t=base(d)+rnd(0,1.8)-(mine&&S.boost>0?.5:0)-(S.tick%50)/50*.5;if(!(S.best[id]<t))S.best[id]=t}
@@ -126,12 +143,15 @@ function pickTyre(c,rem,wx){if(wx=='wet')return'W';if(wx=='inter')return'I';
  if(new Set(c.used).size<2){const f=o.filter(x=>x!=c.tyre);if(f.length)o=f}return o[0]}
 function raceStep(){
  const N=S.N,wx=G.wk.wx,lt0=C()[2];S.lap++;const prev=rorder().filter(c=>!c.dnf),rem=N-S.lap;
- S.cars.forEach(c=>{if(c.dnf)return;const d=G.drv[c.id],ty=eff(d,'tyr'),T=TY[c.tyre],f=c.w/T.l;
-  let lt=base(d)+T.p+f*.9+Math.max(0,f-.85)*10+MM[wx][c.tyre]+lt0*SL[wx]+rnd(0,1.9)+c.form;
-  if(rem>3&&S.lap>1&&f>.82+c.th+(ty-60)/400){lt+=22;c.pits++;c.w=0;c.tyre=pickTyre(c,rem,wx);c.used.push(c.tyre)}
-  else c.w+=(1.75-ty/100)*(d.t=='P'?1.1-G.pu.eff/500:1);
-  c.t+=lt;if(Math.random()<(100-(d.t=='P'?G.pu.rel:85))*.000058+.0004){c.dnf=true;c.dl=S.lap}});
- for(let i=1;i<prev.length;i++){const c=prev[i],a=prev[i-1];if(c.dnf||a.dnf)continue;
+ let sc=S.sc>0;if(sc)S.sc--;else if(rem>4&&S.lap>2&&Math.random()<.008){S.sc=Math.floor(rnd(2,5));sc=true}
+ S.scNow=sc;
+ S.cars.forEach(c=>{c.jp=false;if(c.dnf)return;const d=G.drv[c.id],ty=eff(d,'tyr'),T=TY[c.tyre],f=c.w/T.l;
+  let lt=sc?lt0*1.4:base(d)+T.p+f*.9+Math.max(0,f-.85)*10+MM[wx][c.tyre]+lt0*SL[wx]+rnd(0,1.9)+c.form;
+  if(rem>3&&S.lap>1&&f>(sc?.5:.82+c.th+(ty-60)/400)){lt+=sc?10:22;c.jp=true;c.pits++;c.w=0;c.tyre=pickTyre(c,rem,wx);c.used.push(c.tyre)}
+  else c.w+=(sc?.4:1)*(1.75-ty/100)*(d.t=='P'?1.2-G.pu.eff/500-G.car.care/500:1);
+  c.t+=lt;if(Math.random()<(100-(d.t=='P'?G.pu.rel+G.car.rel:85))*.000058+.0004){c.dnf=true;c.dl=S.lap;if(!sc&&!S.sc&&rem>4&&Math.random()<.5)S.sc=Math.floor(rnd(3,5))}});
+ if(sc){const o=S.cars.filter(c=>!c.dnf).sort((a,b)=>a.t-b.t);o.forEach((c,i)=>{if(i&&!c.jp)c.t=Math.min(c.t,o[0].t+i*.7)})}
+ else for(let i=1;i<prev.length;i++){const c=prev[i],a=prev[i-1];if(c.dnf||a.dnf)continue;
   if(c.t-a.t<1.2)c.t-=clamp((eff(G.drv[c.id],'att')-eff(G.drv[a.id],'def'))*.015,-.6,.6)}
  if(S.lap>=N){S.done=true;finish()}
 }
@@ -143,14 +163,14 @@ function finish(){
 function push(){if(S.push>0&&S.boost==0){S.push--;S.boost=8;ctl()}}
 function ctl(){
  const e=$('#ctl');if(!e)return;let h;
- if(S.done)h=`<button class="p" onclick="after()">Continue ${I.play}</button>`;
+ if(S.done)h=S.chain&&S.k!='R'?'<span class="m">Starting next session…</span>':`<button class="p" onclick="after()">Continue ${I.play}</button>`;
  else if(S.k=='R')h=`<div class="row"><span class="m">Tyres, pit stops and overtakes are handled automatically by drivers and engineers.</span><button onclick="skip()">${I.skip}Skip</button></div>`;
  else h=`<div class="row"><button class="${S.boost>0?'on':''}" ${S.push<1||S.boost?'disabled':''} onclick="push()">${I.zap}Push Lap (${S.push})</button><button onclick="skip()">${I.skip}Skip</button></div>`;
  e.innerHTML=h}
 function draw(){
  if(!$('#tbl'))return;const k=S.k;let h='';
  if(k=='R'){const o=rorder();
-  $('#stt').textContent=`${C()[0]} GP · Lap ${S.lap}/${S.N} · ${WX[G.wk.wx]}`;$('#tmr').textContent='';$('#pg').style.width=S.lap/S.N*100+'%';
+  $('#stt').textContent=`${C()[0]} GP · Lap ${S.lap}/${S.N} · ${WX[G.wk.wx]}${S.scNow?' · SAFETY CAR':''}`;$('#stt').style.color=S.scNow?'#facc15':'';$('#tmr').textContent='';$('#pg').style.width=S.lap/S.N*100+'%';
   h='<table><tr><th>P</th><th>Driver</th><th>Gap</th><th>Tyre</th><th>Pits</th></tr>'+o.map((c,p)=>{const d=G.drv[c.id],T=TY[c.tyre];return `<tr class="${d.t=='P'?'me':''}"><td class="mono">${p+1}</td><td><span class="dot" style="background:${tc(d.t)}"></span>${sh(d)}</td><td class="mono">${c.dnf?'<span class="dn">DNF</span>':p?'+'+(c.t-o[0].t).toFixed(1):'LEAD'}</td><td class="mono">${c.dnf?'':`<span class="tb" style="color:${T.c};border-color:${T.c}">${c.tyre}</span>${Math.max(0,100-Math.round(c.w/T.l*100))}%`}</td><td class="mono">${c.pits}</td></tr>`}).join('')+'</table>';
  }else{
   const sec=k=='Q'?S.tick%50:S.tick,left=Math.max(0,20-sec*.4);
@@ -164,7 +184,7 @@ function after(){if(S.k=='R'){V='res';save();render();return}G.wk.step++;V='hub'
 function resView(){
  $('#app').innerHTML=head()+`<div class="card"><h3>${C()[0]} GP – Results</h3><div class="wrap"><table>${S.res.map(r=>`<tr class="${r.d.t=='P'?'me':''}"><td class="mono">${r.c.dnf?'DNF':r.p+1}</td><td><span class="dot" style="background:${tc(r.d.t)}"></span>${r.d.n}</td><td class="m">${G.teams[r.d.t].n}</td><td class="mono">${r.c.used.map(u=>`<span class="tb" style="color:${TY[u].c};border-color:${TY[u].c}">${u}</span>`).join('')}</td><td class="mono up">${r.pt?'+'+r.pt:''}</td></tr>`).join('')}</table></div></div>
  <div class="card">Your team scored <b>${S.mine} pts</b> · prize & sponsors <b class="up">+$${S.prize}M</b><br><br><button class="p" onclick="nextRace()">${G.round>=23?'End Season':'Next Round'}</button></div>`}
-function nextRace(){G.round++;wk();G.news=[];V=G.round>=24?'end':'hub';TAB='race';save();render()}
+function nextRace(){G.news=rdTick();Object.keys(G.teams).forEach(t=>{if(t!='P')G.teams[t].car=Math.min(97,G.teams[t].car+rnd(0,.3))});G.round++;wk();V=G.round>=24?'end':'hub';TAB='race';save();render()}
 function endView(){
  const d=Object.keys(G.dp).map(Number).sort((a,b)=>G.dp[b]-G.dp[a]),t=Object.keys(G.teams).sort((a,b)=>(G.tp[b]||0)-(G.tp[a]||0));
  $('#app').innerHTML=head()+`<div class="card"><h3>Season ${G.season} complete</h3><h1>${G.drv[d[0]].n}</h1><p class="m">Drivers' champion · ${G.dp[d[0]]} pts</p><h2>${G.teams[t[0]].n}</h2><p class="m">Constructors' champion</p><p>Your team finished P${t.indexOf('P')+1} with ${G.tp.P||0} points.</p><button class="p" onclick="newSeason()">Season ${G.season+1} (reshuffle grid)</button></div>`}
@@ -172,7 +192,7 @@ function newSeason(){
  const all=Object.values(G.drv),pool=all.filter(d=>d.t!='P'),old={};
  all.forEach(d=>{const g=d.s=='F3'?[0,4]:d.s=='F2'?[-1,3]:[-3,2];['r','att','def','tyr','cor'].forEach(k=>d[k]=clamp(d[k]+Math.round(rnd(...g)+rnd(-1,1)),55,98))});
  pool.forEach(d=>old[d.id]=d.t);Object.values(G.eng).forEach(e=>['att','def','tyr'].forEach(k=>e[k]=clamp(e[k]+Math.round(rnd(-3,3)),50,98)));
- const ts=D.teams.map(t=>t[0]);ts.forEach(t=>G.teams[t].car=clamp(G.teams[t].car+Math.round(rnd(-4,4)),68,97));
+ const ts=D.teams.map(t=>t[0]);ts.forEach(t=>G.teams[t].car=clamp(G.teams[t].car+Math.round(rnd(-6,1)),68,97));
  const sc=d=>d.r+rnd(-8,8)+(d.s=='F1'?4:0);pool.forEach(d=>d._s=sc(d));pool.sort((a,b)=>b._s-a._s);
  const slots=ts.flatMap(t=>[t,t]);for(let i=slots.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[slots[i],slots[j]]=[slots[j],slots[i]]}
  pool.forEach((d,k)=>{d.t=k<slots.length?slots[k]:'FA';delete d._s});
@@ -180,7 +200,7 @@ function newSeason(){
  G.season++;G.round=0;G.dp={};G.tp={};G.money+=20;wk();V='hub';TAB='race';save();render()}
 fetch('data.json').then(r=>r.json()).then(d=>{D=d;
  const sv=localStorage.getItem(KEY);
- if(sv)G=JSON.parse(sv);else{const su=localStorage.getItem(SETUP);if(!su){location.href='index.html';return}build(JSON.parse(su))}
+ if(sv){G=JSON.parse(sv);if(!G.car){G.car={aero:G.chassis||62,spd:G.chassis||62,mech:G.chassis||62,care:60,rel:0};G.parts={};G.rd=[];G.wt=0}}else{const su=localStorage.getItem(SETUP);if(!su){location.href='index.html';return}build(JSON.parse(su))}
  document.documentElement.style.setProperty('--a',G.color);if(G.round>=24)V='end';render()
 }).catch(()=>{$('#app').innerHTML='<div class="card"><h2>Could not load data.json</h2><p class="m">Serve this folder with a local web server (e.g. <span class="mono">python -m http.server</span>) instead of opening the file directly.</p></div>'});
 </script></body></html>
