@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pit Wall – Team Setup</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#0b0c0f;--s:#14161b;--s2:#1b1e25;--b:#262a33;--t:#e8eaf0;--m:#8a90a0;--a:#e10600;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:14px 'Space Grotesk',system-ui,sans-serif}
+#app{max-width:920px;margin:0 auto;padding:16px}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px}
+.card{background:var(--s);border:1px solid var(--b);border-radius:14px;padding:16px;margin-bottom:12px}
+h1,h2,h3{margin:0 0 10px}h1{font-size:26px}h3{font-size:13px;color:var(--m);text-transform:uppercase;letter-spacing:.08em}
+.m{color:var(--m)}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.sp{flex:1}
+button,select{font:inherit;color:var(--t);background:var(--s2);border:1px solid var(--b);border-radius:10px;padding:9px 14px;cursor:pointer}
+button:hover{border-color:var(--m)}button.p{background:var(--a);border-color:var(--a);color:#fff;font-weight:700}
+button:disabled{opacity:.4;cursor:not-allowed}button.on{border-color:var(--a);background:#2a1618}button.s{padding:5px 9px;font-size:12px}
+input{font:inherit;color:var(--t);background:var(--s2);border:1px solid var(--b);border-radius:10px;padding:10px 12px;width:100%}
+.sw{width:28px;height:28px;border-radius:50%;padding:0;border:2px solid transparent}.sw.on{border-color:#fff}
+.steps{display:flex;gap:6px;margin:14px 0}.st{flex:1;padding:8px;border-radius:8px;background:var(--s2);color:var(--m);font-size:12px;text-align:center}
+.st.c{background:var(--a);color:#fff;font-weight:700}.st.d{color:#4ade80}
+.pts{background:var(--s2);border:1px solid var(--b);border-radius:10px;padding:6px 12px}.neg{color:#f87171}
+table{width:100%;border-collapse:collapse}td,th{padding:6px 8px;text-align:left;border-bottom:1px solid var(--b);white-space:nowrap}th{color:var(--m);font-weight:500;font-size:12px}
+.wrap{overflow-x:auto;max-height:420px;overflow-y:auto}tr.sel td{background:#ffffff0d}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.pc{background:var(--s2);border:1px solid var(--b);border-radius:12px;padding:14px;cursor:pointer}.pc.sel{border-color:var(--a);box-shadow:0 0 0 1px var(--a)}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px}
+</style></head><body><div id="app"></div>
+<script>
+const $=s=>document.querySelector(s),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const SAVE='pitwall_save',SETUP='pitwall_setup';
+let D,step=0,F='All',S={name:'',color:'#e10600',drv:[],eng:{},pu:null};
+const lerp=(v,[a,b],[c,d])=>Math.round(c+(clamp(v,a,b)-a)/(b-a)*(d-c));
+const dcost=d=>lerp(d[2],D.meta[d[1]].ovr,D.meta[d[1]].cost);
+const ecost=e=>lerp((e[1]+e[2]+e[3])/3,D.meta.eng.avg,D.meta.eng.cost);
+const pcost=p=>lerp((p[2]+p[3]+p[4])/3,D.meta.pu.avg,D.meta.pu.cost);
+const spent=()=>S.drv.reduce((s,i)=>s+dcost(D.drivers[i])+(S.eng[i]!=null?ecost(D.engineers[S.eng[i]]):0),0)+(S.pu!=null?pcost(D.pu[S.pu]):0);
+const left=()=>D.budget-spent();
+const ic='<svg class="i" viewBox="0 0 24 24"><path d="M4 22V4M4 4c3-2 6 2 9 0s5-1 7 0v9c-2-1-4-1-7 0s-6-2-9 0"/></svg>';
+function head(){return `<h1>${ic} PIT WALL</h1><div class="steps">${['1 · Team','2 · Drivers & Engineers','3 · Power Unit'].map((s,i)=>`<div class="st ${i==step?'c':i<step?'d':''}">${s}</div>`).join('')}</div>`}
+function pts(){const l=left();return `<span class="pts mono">Points left: <b class="${l<0?'neg':''}">${l}</b> / ${D.budget}</span>`}
+function render(){
+ const has=localStorage.getItem(SAVE);let h=head();
+ if(step==0){
+  h+=`${has?`<div class="card"><div class="row"><span>A saved game was found.</span><span class="sp"></span><button class="p" onclick="location.href='sim.html'">Continue</button></div></div>`:''}
+  <div class="card"><h3>Team name</h3><input value="${S.name}" maxlength="22" placeholder="e.g. Apex Racing" oninput="S.name=this.value;$('#nx').disabled=!this.value.trim()">
+  <div class="row" style="margin-top:12px">${['#e10600','#00d2be','#ff8000','#3671c6','#a855f7','#facc15'].map(c=>`<button class="sw ${c==S.color?'on':''}" style="background:${c}" onclick="S.color='${c}';document.documentElement.style.setProperty('--a',S.color);render()"></button>`).join('')}</div></div>
+  <button id="nx" class="p" ${S.name.trim()?'':'disabled'} onclick="step=1;render()">Next</button>`;
+ }
+ if(step==1){
+  const L=D.drivers.map((d,i)=>[d,i]).filter(x=>F=='All'||x[0][1]==F).sort((a,b)=>dcost(b[0])-dcost(a[0]));
+  h+=`<div class="row" style="margin-bottom:12px"><h3 style="margin:0">Pick exactly 2 drivers (${S.drv.length}/2)</h3><span class="sp"></span>${pts()}</div>
+  <div class="card"><h3>Your lineup</h3>${[0,1].map(k=>{const i=S.drv[k];if(i==null)return `<div class="m" style="margin-bottom:8px">Slot ${k+1}: empty</div>`;const d=D.drivers[i];
+   return `<div class="row" style="margin-bottom:8px"><b>${d[0]}</b><span class="m mono">${d[1]} · ${dcost(d)} pts</span><span class="sp"></span><span class="m">Race engineer:</span><select onchange="S.eng[${i}]=this.value===''?null:+this.value;render()"><option value="">None</option>${D.engineers.map((e,j)=>{const used=S.drv.some(x=>x!=i&&S.eng[x]===j);return `<option value="${j}" ${S.eng[i]===j?'selected':''} ${used?'disabled':''}>${e[0]} · A${e[1]} D${e[2]} T${e[3]} · ${ecost(e)} pts</option>`}).join('')}</select></div>`}).join('')}</div>
+  <div class="row" style="margin-bottom:8px">${['All','F1','F2','F3'].map(f=>`<button class="s ${F==f?'on':''}" onclick="F='${f}';render()">${f}</button>`).join('')}</div>
+  <div class="card wrap"><table><tr><th>Driver</th><th>Series</th><th>OVR</th><th>ATT</th><th>DEF</th><th>TYR</th><th>COR</th><th>Cost</th><th></th></tr>${L.map(([d,i])=>`<tr class="${S.drv.includes(i)?'sel':''}"><td>${d[0]}</td><td class="m">${d[1]}</td><td class="mono">${d[2]}</td><td class="mono">${d[3]}</td><td class="mono">${d[4]}</td><td class="mono">${d[5]}</td><td class="mono">${d[6]}</td><td class="mono">${dcost(d)}</td><td><button class="s" onclick="pick(${i})">${S.drv.includes(i)?'Remove':'Pick'}</button></td></tr>`).join('')}</table></div>
+  <div class="row"><button onclick="step=0;render()">Back</button><button class="p" ${S.drv.length==2&&left()>=0?'':'disabled'} onclick="step=2;render()">Next</button></div>`;
+ }
+ if(step==2){
+  h+=`<div class="row" style="margin-bottom:12px"><h3 style="margin:0">Choose a power unit</h3><span class="sp"></span>${pts()}</div>
+  <div class="grid" style="margin-bottom:12px">${D.pu.map((p,i)=>`<div class="pc ${S.pu===i?'sel':''}" onclick="S.pu=${i};render()"><div class="row"><b>${p[1]}</b><span class="sp"></span><span class="mono">${pcost(p)} pts</span></div><div class="mono m" style="margin-top:8px">POWER <b style="color:var(--t)">${p[2]}</b> · RELIABILITY <b style="color:var(--t)">${p[3]}</b> · EFFICIENCY <b style="color:var(--t)">${p[4]}</b></div></div>`).join('')}</div>
+  <div class="row"><button onclick="step=1;render()">Back</button><button class="p" ${S.pu!=null&&left()>=0?'':'disabled'} onclick="start()">Start career</button></div>`;
+ }
+ $('#app').innerHTML=h;
+}
+function pick(i){const k=S.drv.indexOf(i);if(k>=0){S.drv.splice(k,1);delete S.eng[i]}else if(S.drv.length<2)S.drv.push(i);render()}
+function start(){localStorage.setItem(SETUP,JSON.stringify(S));localStorage.removeItem(SAVE);location.href='sim.html'}
+fetch('data.json').then(r=>r.json()).then(d=>{D=d;render()}).catch(()=>{$('#app').innerHTML='<div class="card"><h2>Could not load data.json</h2><p class="m">Open this page through a local web server (e.g. run <span class="mono">python -m http.server</span> in this folder), not by double-clicking the file.</p></div>'});
+</script></body></html>
