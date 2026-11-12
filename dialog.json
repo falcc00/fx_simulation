@@ -1,0 +1,18 @@
+{
+"_vars": "{d}=driver, {n}=other driver, {t}=tyre letter, {p}=position. Keys starting with rc_ are Race Control messages, the rest are your race engineer.",
+"start": ["Lights out and away we go. Focus on the first lap, {d}.", "Clean start please, {d}. Tyres are good to go.", "Race is on. Keep it tidy through turn one, {d}."],
+"pit": ["Box this lap, {d}. Box, box. We go for {t} tyres.", "{d}, box box. Fresh {t}s waiting for you.", "Pit this lap, {d}. {t} tyres, confirm."],
+"lowtyre": ["{d}, tyres are dropping off. Look after them.", "Tyre life is getting low, {d}. Pit window opening soon.", "Watch the rears, {d}. Degradation is rising."],
+"gain": ["Good job {d}, you are now P{p}.", "Nice move, {d}. P{p}. Keep pushing.", "{d}, P{p} now. Stay with them."],
+"lost": ["{d}, you dropped to P{p}. Stay calm, we have time.", "Lost a place, {d}. P{p}. Push to get it back.", "P{p} now, {d}. Use your DRS next lap."],
+"fastest": ["Purple sector, {d}! That is the fastest lap of the race.", "Fastest lap, {d}. Great pace.", "{d}, you have the fastest lap. Keep it up."],
+"pen_own": ["{d}, track limits. Five seconds added to your time.", "Bad news {d}, five second penalty for exceeding track limits.", "{d}, warning turned to penalty. Five seconds."],
+"dnf_own": ["{d}, we have a problem. Stop the car, stop the car.", "Retire the car, {d}. Box this lap to retire.", "{d}, I am sorry, you are out of the race."],
+"lastlap": ["Last lap, {d}. Bring it home.", "Final lap {d}. No mistakes.", "One more lap, {d}. Everything you have got."],
+"rc_sc": ["Safety car deployed. Delta positive.", "Safety car, safety car. Slow down, keep the gap.", "Incident on track. Safety car is out."],
+"rc_scend": ["Safety car in this lap. Restart is coming.", "Safety car ending. Green flag next lap.", "Safety car will go in at the end of this lap."],
+"rc_pen": ["Five second penalty for {d}: exceeding track limits.", "{d} receives five seconds for track limits.", "Track limits: {d} penalised, five seconds."],
+"rc_dnf": ["{d} is out of the race.", "Retirement for {d}. The car is stopped on track.", "{d} has stopped. Out of the race."],
+"rc_collision": ["Contact between {d} and {n}. Under investigation.", "{d} and {n} have collided. Stewards are looking at it.", "Incident involving {d} and {n}. Noted."],
+"rc_stew": ["Stewards decision: {d} caused a collision. Five second penalty.", "Stewards: {d} is to blame. Five seconds added.", "Collision ruled as {d}'s fault. Five second penalty."]
+}
