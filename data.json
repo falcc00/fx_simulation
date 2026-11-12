@@ -52,11 +52,11 @@
 ["mer","Mercedes",94,92,90],["fer","Ferrari",92,84,88],["hon","Honda",91,86,92],
 ["rbf","Red Bull Ford",88,82,86],["aud","Audi",85,78,84],["ren","Renault",80,88,80]
 ],
-"_circuits_format": ["name", "laps", "baseLapSeconds"],
+"_circuits_format": ["name", "laps", "baseLapSeconds", "lat", "lon", "venue"],
 "circuits": [
-["Australia",58,80],["China",56,95],["Japan",53,91],["Bahrain",57,94],["Saudi Arabia",50,90],["Miami",57,90],
-["Canada",70,74],["Monaco",78,71],["Barcelona",66,77],["Austria",71,66],["Great Britain",52,87],["Belgium",44,104],
-["Hungary",70,77],["Netherlands",72,71],["Italy",53,80],["Madrid",57,90],["Azerbaijan",51,103],["Singapore",62,96],
-["United States",56,96],["Mexico",71,77],["Brazil",71,70],["Las Vegas",50,94],["Qatar",57,82],["Abu Dhabi",58,85]
+["Australia",58,80,-37.85,144.97,"Albert Park"],["China",56,95,31.34,121.22,"Shanghai International"],["Japan",53,91,34.84,136.54,"Suzuka"],["Bahrain",57,94,26.03,50.51,"Sakhir"],["Saudi Arabia",50,90,21.63,39.1,"Jeddah Corniche"],["Miami",57,90,25.96,-80.24,"Miami International Autodrome"],
+["Canada",70,74,45.5,-73.52,"Circuit Gilles Villeneuve"],["Monaco",78,71,43.73,7.42,"Circuit de Monaco"],["Barcelona",66,77,41.57,2.26,"Circuit de Barcelona-Catalunya"],["Austria",71,66,47.22,14.76,"Red Bull Ring"],["Great Britain",52,87,52.07,-1.02,"Silverstone"],["Belgium",44,104,50.44,5.97,"Spa-Francorchamps"],
+["Hungary",70,77,47.58,19.25,"Hungaroring"],["Netherlands",72,71,52.39,4.54,"Zandvoort"],["Italy",53,80,45.62,9.28,"Monza"],["Madrid",57,90,40.46,-3.61,"Madring"],["Azerbaijan",51,103,40.37,49.85,"Baku City Circuit"],["Singapore",62,96,1.29,103.86,"Marina Bay"],
+["United States",56,96,30.13,-97.64,"Circuit of the Americas"],["Mexico",71,77,19.4,-99.09,"Autodromo Hermanos Rodriguez"],["Brazil",71,70,-23.7,-46.7,"Interlagos"],["Las Vegas",50,94,36.11,-115.17,"Las Vegas Strip"],["Qatar",57,82,25.49,51.45,"Lusail"],["Abu Dhabi",58,85,24.47,54.6,"Yas Marina"]
 ]
 }

@@ -1,18 +1,61 @@
 {
-"_vars": "{d}=driver, {n}=other driver, {t}=tyre letter, {p}=position. Keys starting with rc_ are Race Control messages, the rest are your race engineer.",
-"start": ["Lights out and away we go. Focus on the first lap, {d}.", "Clean start please, {d}. Tyres are good to go.", "Race is on. Keep it tidy through turn one, {d}."],
-"pit": ["Box this lap, {d}. Box, box. We go for {t} tyres.", "{d}, box box. Fresh {t}s waiting for you.", "Pit this lap, {d}. {t} tyres, confirm."],
-"lowtyre": ["{d}, tyres are dropping off. Look after them.", "Tyre life is getting low, {d}. Pit window opening soon.", "Watch the rears, {d}. Degradation is rising."],
-"gain": ["Good job {d}, you are now P{p}.", "Nice move, {d}. P{p}. Keep pushing.", "{d}, P{p} now. Stay with them."],
-"lost": ["{d}, you dropped to P{p}. Stay calm, we have time.", "Lost a place, {d}. P{p}. Push to get it back.", "P{p} now, {d}. Use your DRS next lap."],
-"fastest": ["Purple sector, {d}! That is the fastest lap of the race.", "Fastest lap, {d}. Great pace.", "{d}, you have the fastest lap. Keep it up."],
-"pen_own": ["{d}, track limits. Five seconds added to your time.", "Bad news {d}, five second penalty for exceeding track limits.", "{d}, warning turned to penalty. Five seconds."],
-"dnf_own": ["{d}, we have a problem. Stop the car, stop the car.", "Retire the car, {d}. Box this lap to retire.", "{d}, I am sorry, you are out of the race."],
-"lastlap": ["Last lap, {d}. Bring it home.", "Final lap {d}. No mistakes.", "One more lap, {d}. Everything you have got."],
-"rc_sc": ["Safety car deployed. Delta positive.", "Safety car, safety car. Slow down, keep the gap.", "Incident on track. Safety car is out."],
-"rc_scend": ["Safety car in this lap. Restart is coming.", "Safety car ending. Green flag next lap.", "Safety car will go in at the end of this lap."],
-"rc_pen": ["Five second penalty for {d}: exceeding track limits.", "{d} receives five seconds for track limits.", "Track limits: {d} penalised, five seconds."],
-"rc_dnf": ["{d} is out of the race.", "Retirement for {d}. The car is stopped on track.", "{d} has stopped. Out of the race."],
-"rc_collision": ["Contact between {d} and {n}. Under investigation.", "{d} and {n} have collided. Stewards are looking at it.", "Incident involving {d} and {n}. Noted."],
-"rc_stew": ["Stewards decision: {d} caused a collision. Five second penalty.", "Stewards: {d} is to blame. Five seconds added.", "Collision ruled as {d}'s fault. Five second penalty."]
+"_info": "Post-session radio conversations. D = driver, RE = race engineer. Placeholders: {d} driver short name, {p} position, {e} engineer name. Each context has calm / normal / rage variants (add more lines to each list for variety).",
+"weights": {
+ "quali_good": {"calm": 0.5, "normal": 0.4, "rage": 0.1},
+ "quali_mid": {"calm": 0.3, "normal": 0.5, "rage": 0.2},
+ "quali_bad": {"calm": 0.15, "normal": 0.35, "rage": 0.5},
+ "race_win": {"calm": 0.6, "normal": 0.35, "rage": 0.05},
+ "race_podium": {"calm": 0.45, "normal": 0.4, "rage": 0.15},
+ "race_points": {"calm": 0.3, "normal": 0.45, "rage": 0.25},
+ "race_out": {"calm": 0.15, "normal": 0.35, "rage": 0.5},
+ "race_dnf": {"calm": 0.25, "normal": 0.35, "rage": 0.4},
+ "race_pen": {"calm": 0.3, "normal": 0.4, "rage": 0.3}
+},
+"convos": {
+"quali_good": {
+ "calm": [[["D","Good lap, the car felt balanced today. P{p}, nice."],["RE","Well done, {d}. We will keep the same setup for tomorrow."]]],
+ "normal": [[["D","Decent session. I think there was a little more in the car, though."],["RE","Copy that. We will check the data and find where you can gain it."]]],
+ "rage": [[["D","P{p}?! I had the pole lap, the car snapped on the last corner!"],["RE","Understood, {d}. We will look into the rear stability. Great job anyway."]]]
+},
+"quali_mid": {
+ "calm": [[["D","P{p}. The car is okay, just lacking a bit of top speed."],["RE","Copy. We will look at the wing levels for the race."]]],
+ "normal": [[["D","The balance is not quite there. Understeer into the slow corners."],["RE","Ok, we will find it out and adjust for the race."]]],
+ "rage": [[["D","This car has no grip! Every lap I am fighting it!"],["RE","Copy, {d}. Keep calm, we will find out what is going on."]]]
+},
+"quali_bad": {
+ "calm": [[["D","Tough session. We are missing pace everywhere."],["RE","Understood. We will go through the data tonight and fix it."]]],
+ "normal": [[["D","P{p}... the car just won't turn. I can't carry any speed."],["RE","Ok, we will find it out. Race pace is what matters now."]]],
+ "rage": [[["D","What is this car?! It is undriveable! P{p} is a joke!"],["RE","Copy, {d}. I hear you. We will find the problem, I promise."]]]
+},
+"race_win": {
+ "calm": [[["D","Yes! What a car today, thank you everyone."],["RE","Brilliant drive, {d}. The strategy and the tyres were perfect."]]],
+ "normal": [[["D","We did it. The car was really good in the final stint."],["RE","Well done. P1, that is a race win."]]],
+ "rage": [[["D","FINALLY! This is what the car should have been doing all season!"],["RE","Copy that, {d}. Enjoy it. Great race."]]]
+},
+"race_podium": {
+ "calm": [[["D","P{p}, good result. The car felt strong on the tyres."],["RE","Great job, {d}. A podium finish."]]],
+ "normal": [[["D","Podium, nice. We were a bit short on pace at the end."],["RE","Copy. We will check the data to find that last bit."]]],
+ "rage": [[["D","P{p}? I could have won it if the car had more straight line speed!"],["RE","Understood, {d}. We will work on that. Good podium."]]]
+},
+"race_points": {
+ "calm": [[["D","P{p}. Solid points, the tyres held up well."],["RE","Good job, {d}. Points for the team."]]],
+ "normal": [[["D","I was stuck in traffic the whole race. The car had no pace to pass."],["RE","Ok, we will find it out. Thanks for the push."]]],
+ "rage": [[["D","I could not overtake anyone! The car is slow on the straights!"],["RE","Copy, {d}. We will bring upgrades. Good points today."]]]
+},
+"race_out": {
+ "calm": [[["D","Tough race. The tyres just fell away at the end."],["RE","Understood. We will review the tyre data after the race."]]],
+ "normal": [[["D","No pace today. The car was sliding everywhere."],["RE","Ok, we will find it out. Let's reset for next weekend."]]],
+ "rage": [[["D","P{p}?! This car is a disaster! I am wasting my time!"],["RE","Copy, {d}. We hear you. We will work on it, I promise."]]]
+},
+"race_dnf": {
+ "calm": [[["D","I have lost power. I have to stop the car."],["RE","Copy, {d}. Stop the car safely. We will check what happened."]]],
+ "normal": [[["D","Something broke at the rear. The car just died."],["RE","Ok, bring it into the pits. We will find out what happened."]]],
+ "rage": [[["D","Not again! The car broke AGAIN! What are you doing back there?!"],["RE","Copy, {d}. I am sorry. We will investigate right away."]]]
+},
+"race_pen": {
+ "calm": [[["D","That penalty hurt us. I thought I was within the limits."],["RE","Copy. We will look at the onboard and see what happened."]]],
+ "normal": [[["D","Five seconds, that was harsh. The car was a handful in that corner."],["RE","Ok, we will find out why the car slid there."]]],
+ "rage": [[["D","That penalty is a joke! The car was undriveable out of that corner!"],["RE","Understood, {d}. We will check it and talk to the stewards."]]]
+}
+}
 }

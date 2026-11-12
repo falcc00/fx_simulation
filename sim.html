@@ -2,6 +2,7 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Pit Wall – F1 Manager Sim</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#0b0c0f;--s:#14161b;--s2:#1b1e25;--b:#262a33;--t:#e8eaf0;--m:#8a90a0;--a:#e10600;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -31,7 +32,7 @@ th{color:var(--m);font-weight:500;font-size:12px}tr.me td{background:#ffffff0d}
 <script>
 const $=s=>document.querySelector(s),rnd=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const SK=n=>'pitwall_save_'+n,SETUP='pitwall_setup',PTS=[25,18,15,12,10,8,6,4,2,1],SPTS=[8,7,6,5,4,3,2,1],SPRINT=[1,5,6,10,13,17];
-let SLOT=+localStorage.getItem('pitwall_slot')||1,SND=localStorage.getItem('pitwall_snd')!='0',SM=false,DLG={},NP=null,PR=null;
+let SLOT=+localStorage.getItem('pitwall_slot')||1,SM=false,DLG={},NP=null,PR=null,MENU=false,GL=null,GT=null;
 const TY={S:{l:20,p:-.55,c:'#ef4444'},M:{l:30,p:-.2,c:'#facc15'},H:{l:42,p:0,c:'#e5e7eb'},I:{l:30,p:0,c:'#22c55e'},W:{l:26,p:0,c:'#3b82f6'}};
 const MM={dry:{S:0,M:0,H:0,I:4,W:6},inter:{S:7,M:7,H:7,I:0,W:1.5},wet:{S:10,M:10,H:10,I:2.5,W:0}},SL={dry:0,inter:.06,wet:.1},WX={dry:'Dry',inter:'Intermediate',wet:'Wet'};
 const ic=(p)=>`<svg class="i" viewBox="0 0 24 24"><path d="${p}"/></svg>`;
@@ -44,9 +45,8 @@ const lerp=(v,[a,b],[c,d])=>Math.round(c+(clamp(v,a,b)-a)/(b-a)*(d-c));
 const dcost=d=>lerp(d.r,D.meta[d.s].ovr,D.meta[d.s].cost),price=d=>Math.round(dcost(d)*1.5);
 const ecost=e=>Math.round(lerp((e.att+e.def+e.tyr)/3,D.meta.eng.avg,D.meta.eng.cost)*1.5);
 const save=()=>localStorage.setItem(SK(SLOT),JSON.stringify(G));
-const toast=m=>{const t=$('#toast'),e=document.createElement('div');e.textContent=m;t.appendChild(e);setTimeout(()=>e.remove(),2800);if(document.hidden&&window.Notification&&Notification.permission=='granted')new Notification('Pit Wall',{body:m})};
-const beep=(f,d=.12,v=.04)=>{if(!SND)return;try{const a=beep.c||(beep.c=new AudioContext()),o=a.createOscillator(),g=a.createGain();o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+d)}catch(e){}};
-const note=(m,f)=>{toast(m);if(f)beep(f)};
+const toast=m=>{const t=$('#toast'),e=document.createElement('div');e.textContent=m;t.appendChild(e);setTimeout(()=>e.remove(),2800)};
+const note=m=>toast(m);
 function spend(c){if(c>G.money){toast('Not enough budget');return false}if(G.spent+c>G.cap){toast('Cost cap exceeded for this season');return false}G.money-=c;G.spent+=c;return true}
 const pucost=p=>Math.round(lerp((p[2]+p[3]+p[4])/3,D.meta.pu.avg,D.meta.pu.cost)*1.5);
 const C=()=>D.circuits[Math.min(G.round,23)],tc=t=>G.teams[t].c,sh=d=>d.n.replace(/^(\S)\S*\s/,'$1. ');
@@ -74,19 +74,22 @@ function mig(){if(!G.car){G.car={aero:G.chassis||62,spd:G.chassis||62,mech:G.cha
  G.career=G.career||{td:0,tc:0,w:0,p:0,pl:0,fl:0,best:0};G.hist=G.hist||[];G.spent=G.spent||0;G.cap=G.cap||120;G.regYear=G.regYear||2030;G.sw=G.sw||0;
  if(G.puIdx==null)G.puIdx=Math.max(0,D.pu.findIndex(p=>p[1]==G.pu.n));
  if(G.wk&&!G.wk.kinds){G.wk.kinds=['FP','FP','FP','Q','R'];G.wk.labels=['FP1','FP2','FP3','Quali','Race']}}
-function head(){return `<div class="row card" style="padding:12px"><b style="color:var(--a)">${G.name}</b><span class="m">S${G.season}</span><span class="sp"></span><span class="mono">$${G.money.toFixed(1)}M · cap ${G.spent.toFixed(0)}/${G.cap}</span><button class="s" onclick="SND=!SND;localStorage.setItem('pitwall_snd',SND?1:0);if(SND&&window.Notification&&Notification.permission=='default')Notification.requestPermission();render()">Sound ${SND?'on':'off'}</button>${V=='hub'?`<button class="s" onclick="SM=true;hub()">Saves</button>`:''}</div>`}
+function head(){return `<div class="row card" style="padding:12px"><b style="color:var(--a)">${G.name}</b><span class="m">S${G.season}</span><span class="sp"></span><span class="mono">$${G.money.toFixed(1)}M · cap ${G.spent.toFixed(0)}/${G.cap}</span></div>`}
 function render(){
+ if(V!='hub')killGlobe();
  if(V=='hub')hub();else if(V=='res')resView();else if(V=='end')endView();
- else{$('#app').innerHTML=`${head()}<div class="card"><div class="row"><h2 id="stt" class="sp"></h2><span id="tmr" class="mono"></span></div><div class="bar"><i id="pg" style="width:0"></i></div><div id="ctl" style="margin-top:12px"></div><div id="rad" class="rad" style="margin-top:10px"></div></div><div class="card wrap" style="max-height:560px;overflow-y:auto" id="tbl"></div>`;ctl();draw()}
+ else{$('#app').innerHTML=`${head()}<div class="card"><div class="row"><h2 id="stt" class="sp"></h2><span id="tmr" class="mono"></span></div><div class="bar"><i id="pg" style="width:0"></i></div><div id="ctl" style="margin-top:12px"></div></div><div class="card wrap" style="max-height:560px;overflow-y:auto" id="tbl"></div>`;ctl();draw()}
 }
 function hub(){
- save();const w=G.wk,c=C(),tabs=[['race','Race'],['std','Standings'],['mkt','Drivers'],['eng','Engineers'],['car','Car & PU'],['acad','Academy'],['cr','Career']];
- let h=head()+`<div class="tabs">${tabs.map(t=>`<button class="${TAB==t[0]?'on':''}" onclick="TAB='${t[0]}';hub()">${t[1]}</button>`).join('')}</div>`;
+ killGlobe();save();const w=G.wk,c=C(),tabs=[['race','Race'],['std','Standings'],['mkt','Drivers'],['eng','Engineers'],['car','Car & PU'],['acad','Academy'],['cr','Career']];
+ let h=head()+`<div class="row" style="margin-bottom:12px"><button onclick="MENU=true;hub()" aria-label="Menu"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><h2 style="margin:0">${tabs.find(t=>t[0]==TAB)[1]}</h2></div>${MENU?`<div class="mod" style="justify-content:flex-start;align-items:stretch;padding:0" onclick="MENU=false;hub()"><div class="card" style="width:240px;margin:0;border-radius:0;display:flex;flex-direction:column;gap:6px" onclick="event.stopPropagation()"><h3>Menu</h3>${tabs.map(t=>`<button class="${TAB==t[0]?'on':''}" onclick="TAB='${t[0]}';MENU=false;hub()">${t[1]}</button>`).join('')}<button onclick="MENU=false;SM=true;hub()">Saves</button></div></div>`:''}`;
  if(TAB=='race'){
   h+=`<div class="card"><h3>Round ${G.round+1} / 24${SPRINT.includes(G.round)?' · SPRINT WEEKEND':''}</h3><h1>${c[0]} GP</h1><div class="m">${c[1]} laps · ref. lap ${ft(c[2])} · Weather: <b style="color:var(--t)">${WX[w.wx]}</b></div>
   <div class="steps">${w.labels.map((s,i)=>`<div class="st ${i<w.step?'d':i==w.step?'c':''}">${s}</div>`).join('')}</div>
   <div class="row"><button class="p" onclick="startS('${w.kinds[w.step]}')">${I.play} Start ${w.labels[w.step]}</button>${['FP','Q','SQ'].includes(w.kinds[w.step])?`<button onclick="startS('${w.kinds[w.step]}',true)">${I.zap} Auto-run</button>`:''}</div></div>
-  <div class="card"><h3>Your drivers</h3>${myIds().map(i=>{const d=G.drv[i],e=engOf(d);return `<div style="margin-bottom:10px"><div class="row"><span class="dot" style="background:${G.color}"></span><b>${d.n}</b><span class="m">${d.s}</span><span class="sp"></span><span class="mono">OVR ${d.r} · ${G.dp[i]||0} pts</span></div>${stats(d)}<div class="m">Engineer: ${e?e.n:'none (hire one in Engineers)'}</div></div>`}).join('')}</div>`;
+  <div class="card"><h3>${G.season} calendar</h3><div id="globe" style="width:100%;height:360px;touch-action:none"></div><div id="ginfo" class="m" style="margin-top:8px"></div></div>
+  <div class="card wrap" style="max-height:340px;overflow-y:auto"><h3>All circuits</h3><table><tr><th>#</th><th>Grand Prix</th><th>Circuit</th><th>Laps</th><th></th></tr>${D.circuits.map((x,i)=>`<tr onclick="gfocus(${i})" style="cursor:pointer;${i==G.round?'background:#ffffff0d':''}"><td class="mono">${i+1}</td><td>${x[0]}${SPRINT.includes(i)?' <span class="mono" style="color:#facc15">SPRINT</span>':''}</td><td class="m">${x[5]}</td><td class="mono">${x[1]}</td><td class="mono ${i<G.round?'up':''}">${i<G.round?'Done':i==G.round?'Next':''}</td></tr>`).join('')}</table></div>
+  <div class="card"><h3>Your drivers</h3>${myIds().map(i=>{const d=G.drv[i],e=engOf(d);return `<div style="margin-bottom:10px"><div class="row"><span class="dot" style="background:${G.color}"></span><b>${d.n}</b><span class="sp"></span><span class="mono">OVR ${d.r} · ${G.dp[i]||0} pts</span></div>${stats(d)}<div class="m">Engineer: ${e?e.n:'none (hire one in Engineers)'}</div></div>`}).join('')}</div>`;
   if(G.news.length)h+=`<div class="card"><h3>News</h3>${G.news.map(n=>`<div class="m">${n}</div>`).join('')}</div>`;
  }
  if(TAB=='std'){
@@ -105,7 +108,7 @@ function hub(){
   <div class="card wrap"><h3>Engineer market</h3><table>${mk.map(e=>`<tr><td>${e.n}</td><td>${estats(e)}</td><td class="mono">$${ecost(e)}M</td><td><button class="s" onclick="hire(${e.id})">Hire</button></td></tr>`).join('')}</table></div>`;
  }
  if(TAB=='car')h+=carTab();if(TAB=='acad')h+=acadTab();if(TAB=='cr')h+=careerTab();if(SM)h+=savesModal();
- $('#app').innerHTML=h;
+ $('#app').innerHTML=h;if(TAB=='race')setTimeout(initGlobe,0);
 }
 const pcost=(p,l)=>Math.round(5+l*3+Object.values(p.e).reduce((a,b)=>a+b,0)*2),pch=l=>clamp(.65+G.wt*.05-l*.04,.3,.95);
 function carTab(){
@@ -129,11 +132,11 @@ function trade(t,m){const a=G.drv[t],b=G.drv[m],c=price(a)-Math.round(price(b)/2
  if(c<=0)G.money-=c;Object.values(G.eng).forEach(x=>{if(x.dv==m)x.dv=null});b.t=a.t;a.t='P';TR=null;toast(a.n+' joined your team!');hub()}
 function startS(kk,chain){const k=kk=='SQ'?'Q':kk=='SPR'?'R':kk;
  const L=Object.values(G.drv).filter(d=>d.t!='FA'&&d.t!='A').map(d=>d.id);
- S={k,ids:L,tick:0,best:{},push:3,boost:0,seg:0,elim:[[],[]],act:L.slice(),lap:0,sc:0,chain:!!chain,spr:kk=='SPR',sq:kk=='SQ',fl:{t:1e9},ph:{},radio:[],done:false,N:k=='R'?(kk=='SPR'?Math.round(C()[1]/3):C()[1]):k=='Q'?150:50};
+ S={k,ids:L,tick:0,best:{},push:3,boost:0,seg:0,elim:[[],[]],act:L.slice(),lap:0,sc:0,chain:!!chain,spr:kk=='SPR',sq:kk=='SQ',fl:{t:1e9},ph:{},ev:[],talk:'',done:false,N:k=='R'?(kk=='SPR'?Math.round(C()[1]/3):C()[1]):k=='Q'?150:50};
  if(k=='R'){const wx=G.wk.wx;S.cars=(S.spr?G.wk.sgrid:G.wk.grid).map((id,p)=>{const ty=wx=='wet'?'W':wx=='inter'?'I':['S','M','M','H','H'][Math.floor(Math.random()*5)];return{id,t:p*.3,w:0,pits:0,tyre:ty,used:[ty],dnf:false,form:rnd(-.4,.4),th:rnd(0,.1)}})}
  V='ses';render();clearInterval(TM);TM=setInterval(step,k=='R'?350:400);
 }
-function fin(){clearInterval(TM);beep(440,.2);if(S.chain&&S.k!='R'&&!S.nx){S.nx=1;setTimeout(autoNext,1100)}}
+function fin(){clearInterval(TM);if(S.chain&&S.k=='FP'&&!S.nx){S.nx=1;setTimeout(autoNext,1100)}}
 function autoNext(){if(!S||!S.done)return;G.wk.step++;const k=G.wk.kinds[G.wk.step];if(['FP','Q','SQ'].includes(k))startS(k,true);else{V='hub';render()}}
 function step(){S.k=='R'?raceStep():fpStep();if(S.done)fin();draw();ctl()}
 function skip(){while(!S.done)S.k=='R'?raceStep():fpStep();fin();draw();ctl()}
@@ -144,13 +147,16 @@ const rk=l=>l.slice().sort((a,b)=>(S.best[a]??1e9)-(S.best[b]??1e9));
 function fpStep(){
  S.tick++;if(S.boost>0)S.boost--;(S.k=='FP'?S.ids:S.act).forEach(i=>lapTry(i,S.k=='FP'?.22:.3));
  if(S.k=='Q'&&S.tick%50==0&&S.tick<150){const o=rk(S.act),keep=S.seg==0?16:8;S.elim[S.seg]=o.slice(keep);S.act=o.slice(0,keep);S.seg++;S.best={}}
- if(S.tick>=S.N){S.done=true;if(S.k=='Q'){const g=[...rk(S.act),...S.elim[1],...S.elim[0]];if(S.sq)G.wk.sgrid=g;else{G.wk.grid=g;if(G.drv[g[0]].t=='P'){G.career.pl++;note('Pole position!',784)}}}}
+ if(S.tick>=S.N){S.done=true;if(S.k=='Q'){const g=[...rk(S.act),...S.elim[1],...S.elim[0]];if(S.sq)G.wk.sgrid=g;else{G.wk.grid=g;if(G.drv[g[0]].t=='P'){G.career.pl++;note('Pole position!')}}S.talk=myIds().map(i=>{const p=g.indexOf(i)+1;return convo(p<=6?'quali_good':p<=14?'quali_mid':'quali_bad',G.drv[i],p)}).join('')}}
 }
 const rorder=()=>[...S.cars.filter(c=>!c.dnf).sort((a,b)=>a.t-b.t),...S.cars.filter(c=>c.dnf).sort((a,b)=>b.dl-a.dl)];
 function pickTyre(c,rem,wx){if(wx=='wet')return'W';if(wx=='inter')return'I';
  let o=['S','M','H'].filter(x=>TY[x].l*.9>=rem);if(!o.length)o=['H'];
  if(new Set(c.used).size<2){const f=o.filter(x=>x!=c.tyre);if(f.length)o=f}return o[0]}
-function say(k,v={}){const a=DLG[k];if(!a||!a.length)return;S.radio.unshift({l:S.lap,who:k.startsWith('rc_')?'Race Control':'Engineer',t:a[Math.floor(Math.random()*a.length)].replace(/\{(\w+)\}/g,(m,x)=>v[x]??'')})}
+function say(k,v){S.ev.push([k,v&&v.d])}
+function pickMood(w){let r=Math.random()*(w.calm+w.normal+w.rage);for(const m of['calm','normal','rage'])if((r-=w[m])<0)return m;return'normal'}
+function convo(ctx,d,p){const C=DLG.convos&&DLG.convos[ctx];if(!C)return'';const m=pickMood(DLG.weights[ctx]),L=C[m],cv=L[Math.floor(Math.random()*L.length)],e=engOf(d),en=e?e.n:'Race Engineer',col={rage:'#f87171',calm:'#4ade80',normal:'#8a90a0'}[m];
+ return `<div style="margin-bottom:14px"><div class="row" style="margin-bottom:6px"><b>${d.n}</b><span class="mono" style="color:${col}">${m.toUpperCase()}</span></div>${cv.map(([w,t])=>`<div style="margin:3px 0"><b class="${w=='D'?'':'m'}">[${w=='D'?sh(d):en}]</b> ${t.replace(/\{p\}/g,p).replace(/\{d\}/g,sh(d)).replace(/\{e\}/g,en)}</div>`).join('')}</div>`}
 function callSC(n){S.sc=n;say('rc_sc');note('SAFETY CAR deployed',330)}
 function crash(c,a){const cd=G.drv[c.id],ad=G.drv[a.id],x=Math.random()<.65?c:a,out=Math.random()<.2?(Math.random()<.5?c:a):null;c.t+=rnd(3,9);a.t+=rnd(3,9);say('rc_collision',{d:sh(cd),n:sh(ad)});
  if(out){out.dnf=true;out.dl=S.lap;if(!S.sc)callSC(Math.floor(rnd(3,5)))}else{x.t+=5;say('rc_stew',{d:sh(G.drv[x.id])})}
@@ -182,18 +188,18 @@ function finish(){
   if(pt){G.dp[c.id]=(G.dp[c.id]||0)+pt;G.tp[d.t]=(G.tp[d.t]||0)+pt}
   if(d.t=='P'){mine+=pt;if(!c.dnf&&!S.spr){if(p==0){G.career.w++;G.sw++}if(p<3){G.career.p++;note(sh(d)+' – podium P'+(p+1)+'!',784)}}if(fl)G.career.fl++}
   res.push({c,p,pt,d,fl})});
- const prize=+((S.spr?1.5:4)+mine*(S.spr?.6:.8)+(mine?1:0)).toFixed(1);G.money+=prize;S.res=res;S.prize=prize;S.mine=mine;
+ S.talk=myIds().map(i=>{const r=res.find(x=>x.d.id==i);if(!r)return'';const pen=S.ev.some(e=>(e[0]=='pen_own'||e[0]=='rc_stew')&&e[1]==sh(r.d));return convo(r.c.dnf?'race_dnf':pen?'race_pen':r.p==0?'race_win':r.p<3?'race_podium':r.p<10?'race_points':'race_out',r.d,r.p+1)}).join('');const prize=+((S.spr?1.5:4)+mine*(S.spr?.6:.8)+(mine?1:0)).toFixed(1);G.money+=prize;S.res=res;S.prize=prize;S.mine=mine;
 }
 function push(){if(S.push>0&&S.boost==0){S.push--;S.boost=8;ctl()}}
 function ctl(){
  const e=$('#ctl');if(!e)return;let h;
- if(S.done)h=S.chain&&S.k!='R'?'<span class="m">Starting next session…</span>':`<button class="p" onclick="after()">Continue ${I.play}</button>`;
+ if(S.done)h=(S.chain&&S.k=='FP'?'<span class="m">Starting next session…</span>':`<button class="p" onclick="after()">Continue ${I.play}</button>`)+(S.talk?`<h3 style="margin-top:18px">Team radio</h3>${S.talk}`:'');
  else if(S.k=='R')h=`<div class="row"><span class="m">Tyres, pit stops and overtakes are handled automatically by drivers and engineers.</span><button onclick="skip()">${I.skip}Skip</button></div>`;
  else h=`<div class="row"><button class="${S.boost>0?'on':''}" ${S.push<1||S.boost?'disabled':''} onclick="push()">${I.zap}Push Lap (${S.push})</button><button onclick="skip()">${I.skip}Skip</button></div>`;
  e.innerHTML=h}
 function draw(){
  if(!$('#tbl'))return;const k=S.k;let h='';
- if(k=='R'){const o=rorder();$('#rad').innerHTML=S.radio.slice(0,8).map(r=>`<div><span class="mono m">L${r.l}</span> <b>${r.who}</b>: ${r.t}</div>`).join('');
+ if(k=='R'){const o=rorder();
   $('#stt').textContent=`${C()[0]} GP · Lap ${S.lap}/${S.N} · ${WX[G.wk.wx]}${S.scNow?' · SAFETY CAR':''}`;$('#stt').style.color=S.scNow?'#facc15':'';$('#tmr').textContent='';$('#pg').style.width=S.lap/S.N*100+'%';
   h='<table><tr><th>P</th><th>Driver</th><th>Gap</th><th>Tyre</th><th>Pits</th></tr>'+o.map((c,p)=>{const d=G.drv[c.id],T=TY[c.tyre];return `<tr class="${d.t=='P'?'me':''}"><td class="mono">${p+1}</td><td><span class="dot" style="background:${tc(d.t)}"></span>${sh(d)}${c.drs&&!S.scNow&&!c.dnf?' <span class="mono up">DRS</span>':''}${S.fl.id==c.id?' <span class="fl mono">FL</span>':''}</td><td class="mono">${c.dnf?'<span class="dn">DNF</span>':p?'+'+(c.t-o[0].t).toFixed(1):'LEAD'}</td><td class="mono">${c.dnf?'':`<span class="tb" style="color:${T.c};border-color:${T.c}">${c.tyre}</span>${Math.max(0,100-Math.round(c.w/T.l*100))}%`}</td><td class="mono">${c.pits}</td></tr>`}).join('')+'</table>';
  }else{
@@ -212,6 +218,7 @@ function chart(){const N=S.N,W=840,H=380,pl=26,L=S.cars.length,x=l=>pl+(l-1)/(N-
  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;min-width:600px">${g}</svg>`}
 function resView(){
  $('#app').innerHTML=head()+`<div class="card"><h3>${C()[0]} GP – ${S.spr?'Sprint ':''}Results</h3><div class="wrap"><table>${S.res.map(r=>`<tr class="${r.d.t=='P'?'me':''}"><td class="mono">${r.c.dnf?'DNF':r.p+1}</td><td><span class="dot" style="background:${tc(r.d.t)}"></span>${r.d.n}${r.fl?' <span class="fl mono">FL +1</span>':''}</td><td class="m">${G.teams[r.d.t].n}</td><td class="mono">${r.c.used.map(u=>`<span class="tb" style="color:${TY[u].c};border-color:${TY[u].c}">${u}</span>`).join('')}</td><td class="mono up">${r.pt?'+'+r.pt:''}</td></tr>`).join('')}</table></div></div>
+ <div class="card"><h3>Team radio</h3>${S.talk}</div>
  <div class="card"><h3>Position by lap</h3><div class="wrap">${chart()}</div></div>
  <div class="card">Your team scored <b>${S.mine} pts</b> · prize & sponsors <b class="up">+$${S.prize}M</b><br><br><button class="p" onclick="${S.spr?'afterSpr()':'nextRace()'}">${S.spr?'Continue':G.round>=23?'End Season':'Next Round'}</button></div>`}
 function afterSpr(){G.wk.step++;V='hub';save();render()}
@@ -229,6 +236,25 @@ function acadTab(){
  ${PR!=null?`<div class="mod"><div class="card"><h2>Promote ${G.drv[PR].n}</h2><p class="m">Which driver does he replace? The replaced driver becomes a free agent.</p>${myIds().map(i=>`<button style="width:100%;margin-bottom:8px" onclick="promote(${PR},${i})">Replace ${G.drv[i].n}</button>`).join('')}<button onclick="PR=null;hub()">Cancel</button></div></div>`:''}`}
 function signA(id){const d=G.drv[id];if(Object.values(G.drv).filter(x=>x.t=='A').length>=3)return toast('Academy full');if(!spend(Math.max(1,Math.round(price(d)/2))))return;d.t='A';hub()}
 function promote(a,m){const x=G.drv[a],b=G.drv[m];Object.values(G.eng).forEach(e=>{if(e.dv==m)e.dv=null});b.t='FA';x.t='P';PR=null;note(x.n+' promoted to the race team!',660);hub()}
+function ll(lat,lon,r){const p=(90-lat)*Math.PI/180,t=(lon+180)*Math.PI/180;return new THREE.Vector3(-r*Math.sin(p)*Math.cos(t),r*Math.cos(p),r*Math.sin(p)*Math.sin(t))}
+function killGlobe(){if(GL){cancelAnimationFrame(GL.raf);GL.r.dispose();GL.r.forceContextLoss&&GL.r.forceContextLoss();GL=null}}
+function gfocus(i){const x=D.circuits[i],e=$('#ginfo');if(e)e.innerHTML=`<b style="color:var(--t)">${x[0]} GP</b> · ${x[5]} · ${x[1]} laps${SPRINT.includes(i)?' · Sprint weekend':''}`;if(GL)GL.focus(i)}
+function initGlobe(){
+ killGlobe();const el=$('#globe');if(!el)return;
+ if(!window.THREE){el.innerHTML='<div class="m" style="padding:24px">The globe needs internet access (three.js from cdnjs).</div>';return}
+ const W=el.clientWidth||600,H=360,sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(40,W/H,.1,50),r=new THREE.WebGLRenderer({antialias:true,alpha:true}),grp=new THREE.Group(),mat=new THREE.MeshBasicMaterial({color:0x16222f}),R=Math.min(G.round,23);
+ cam.position.z=4.4;r.setSize(W,H);r.setPixelRatio(Math.min(devicePixelRatio||1,2));el.appendChild(r.domElement);sc.add(grp);grp.add(new THREE.Mesh(new THREE.SphereGeometry(1.5,64,64),mat));
+ const setT=t=>{mat.map=t;mat.color.set(0xffffff);mat.needsUpdate=true};
+ if(GT)setT(GT);else{const L=new THREE.TextureLoader();L.setCrossOrigin('anonymous');const U=['earth.jpg','https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg','https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57752/land_shallow_topo_2048.jpg'],nx=i=>{if(i<U.length)L.load(U[i],t=>{GT=t;setT(t)},undefined,()=>nx(i+1))};nx(0)}
+ const acc=getComputedStyle(document.documentElement).getPropertyValue('--a').trim()||'#e10600',ms=D.circuits.map((x,i)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(i==R?.05:.032,12,12),new THREE.MeshBasicMaterial({color:i<R?0x4ade80:i==R?new THREE.Color(acc):0xffffff}));m.position.copy(ll(x[3],x[4],1.51));m.userData.i=i;grp.add(m);return m});
+ const qf=i=>new THREE.Quaternion().setFromUnitVectors(ll(D.circuits[i][3],D.circuits[i][4],1).normalize(),new THREE.Vector3(0,0,1)),spin=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),.0012);
+ grp.quaternion.copy(qf(R));GL={r,tq:null,drag:false,focus:i=>{GL.tq=qf(i)}};
+ let sx,sy,mv=0;const dom=r.domElement;dom.style.cursor='grab';
+ dom.onpointerdown=e=>{GL.drag=true;GL.tq=null;sx=e.clientX;sy=e.clientY;mv=0;dom.setPointerCapture(e.pointerId)};
+ dom.onpointermove=e=>{if(!GL.drag)return;const dx=e.clientX-sx,dy=e.clientY-sy;sx=e.clientX;sy=e.clientY;mv+=Math.abs(dx)+Math.abs(dy);grp.quaternion.premultiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(dy*.006,dx*.006,0)))};
+ dom.onpointerup=e=>{GL.drag=false;if(mv<5){const b=dom.getBoundingClientRect(),rc=new THREE.Raycaster();rc.setFromCamera(new THREE.Vector2((e.clientX-b.left)/b.width*2-1,-(e.clientY-b.top)/b.height*2+1),cam);const h=rc.intersectObjects(ms)[0];if(h)gfocus(h.object.userData.i)}};
+ const tick=()=>{GL.raf=requestAnimationFrame(tick);if(GL.tq){grp.quaternion.slerp(GL.tq,.08);if(grp.quaternion.angleTo(GL.tq)<.01)GL.tq=null}else if(!GL.drag)grp.quaternion.premultiply(spin);ms[R].scale.setScalar(1+.35*Math.sin(Date.now()/250));r.render(sc,cam)};
+ tick();gfocus(R)}
 function savesModal(){return `<div class="mod"><div class="card"><h2>Saves</h2>${[1,2,3].map(n=>{const r=localStorage.getItem(SK(n));let i='Empty';try{if(r){const g=JSON.parse(r);i=`${g.name} · S${g.season} R${Math.min(g.round+1,24)}`}}catch(e){}return `<div class="row" style="margin-bottom:8px"><b>Slot ${n}${n==SLOT?' (active)':''}</b><span class="m sp">${i}</span>${r&&n!=SLOT?`<button class="s" onclick="loadSlot(${n})">Load</button>`:''}${r?`<button class="s" onclick="delSlot(${n})">Delete</button>`:''}</div>`}).join('')}
  <div class="row" style="margin:12px 0"><button class="s" onclick="exportSave()">Export active</button><label class="s" style="cursor:pointer;border:1px solid var(--b);border-radius:10px;padding:5px 9px">Import to slot ${SLOT}<input type="file" accept=".json" hidden onchange="importSave(this)"></label></div>
  <div class="row"><button onclick="location.href='index.html'">New game</button><span class="sp"></span><button onclick="SM=false;hub()">Close</button></div></div></div>`}
