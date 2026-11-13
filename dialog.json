@@ -1,61 +1,79 @@
 {
-"_info": "Post-session radio conversations. D = driver, RE = race engineer. Placeholders: {d} driver short name, {p} position, {e} engineer name. Each context has calm / normal / rage variants (add more lines to each list for variety).",
+"_info": "Post-session radio conversations. D = driver, RE = race engineer (English). {d} driver short name, {p} position, {e} engineer, {cele}/{cele2} = podium celebration in the team's national language (from countries.json). Add more variants to any list for more variety.",
 "weights": {
+ "quali_pole": {"calm": 0.55, "normal": 0.45, "rage": 0},
  "quali_good": {"calm": 0.5, "normal": 0.4, "rage": 0.1},
  "quali_mid": {"calm": 0.3, "normal": 0.5, "rage": 0.2},
  "quali_bad": {"calm": 0.15, "normal": 0.35, "rage": 0.5},
- "race_win": {"calm": 0.6, "normal": 0.35, "rage": 0.05},
- "race_podium": {"calm": 0.45, "normal": 0.4, "rage": 0.15},
+ "race_win": {"calm": 0.6, "normal": 0.4, "rage": 0},
+ "race_podium": {"calm": 0.5, "normal": 0.5, "rage": 0},
  "race_points": {"calm": 0.3, "normal": 0.45, "rage": 0.25},
  "race_out": {"calm": 0.15, "normal": 0.35, "rage": 0.5},
  "race_dnf": {"calm": 0.25, "normal": 0.35, "rage": 0.4},
- "race_pen": {"calm": 0.3, "normal": 0.4, "rage": 0.3}
+ "race_pen": {"calm": 0.3, "normal": 0.4, "rage": 0.3},
+ "race_dns": {"calm": 0.3, "normal": 0.3, "rage": 0.4},
+ "race_dsq": {"calm": 0.2, "normal": 0.3, "rage": 0.5}
 },
 "convos": {
+"quali_pole": {
+ "calm": [[["D","Pole position! The car felt perfect on that lap, thank you guys."],["RE","Fantastic, {d}. P1 on the grid, you have earned it."]],[["D","I cannot believe it, everything came together."],["RE","Beautiful lap, {d}. Now let us finish the job tomorrow."]],[["D","The balance was spot on, I could attack every corner."],["RE","Copy, {d}. Pole position, well done to the whole crew."]]],
+ "normal": [[["D","Pole! That was a clean one, I am really happy."],["RE","Great job, {d}. Let us keep the same car for the race."]],[["D","I gave it everything on that last lap."],["RE","It shows, {d}. P1. Enjoy this one."]],[["D","Good lap, the car was great in the high speed corners."],["RE","Copy that. We are proud of you, {d}."]]],
+ "rage": []
+},
 "quali_good": {
- "calm": [[["D","Good lap, the car felt balanced today. P{p}, nice."],["RE","Well done, {d}. We will keep the same setup for tomorrow."]]],
- "normal": [[["D","Decent session. I think there was a little more in the car, though."],["RE","Copy that. We will check the data and find where you can gain it."]]],
- "rage": [[["D","P{p}?! I had the pole lap, the car snapped on the last corner!"],["RE","Understood, {d}. We will look into the rear stability. Great job anyway."]]]
+ "calm": [[["D","Good lap, the car felt balanced today. P{p}, nice."],["RE","Well done, {d}. We will keep the same setup for tomorrow."]],[["D","Happy with that. Maybe a tenth left in the last sector."],["RE","Copy. Strong session, {d}, P{p} is a good place to start."]],[["D","The car was lovely on the soft tyres."],["RE","Great, {d}. We will look at the long run data tonight."]]],
+ "normal": [[["D","Decent session. I think there was a little more in the car, though."],["RE","Copy that. We will check the data and find where you can gain it."]],[["D","P{p}. I lost a bit in the final chicane."],["RE","Understood. It is a solid result, {d}, we can work with it."]],[["D","Traffic cost me on the out lap, but the pace is there."],["RE","Ok, noted. The car is good, {d}, stay focused."]]],
+ "rage": [[["D","P{p}?! I had the pole lap, the car snapped on the last corner!"],["RE","Understood, {d}. We will look into the rear stability. Great job anyway."]],[["D","I had traffic everywhere! This was not my lap!"],["RE","Copy, {d}. We will talk to the team about the timing."]],[["D","The car just would not rotate in the last sector, what is this?!"],["RE","Ok, we will find it out. Calm down, P{p} is still strong."]]]
 },
 "quali_mid": {
- "calm": [[["D","P{p}. The car is okay, just lacking a bit of top speed."],["RE","Copy. We will look at the wing levels for the race."]]],
- "normal": [[["D","The balance is not quite there. Understeer into the slow corners."],["RE","Ok, we will find it out and adjust for the race."]]],
- "rage": [[["D","This car has no grip! Every lap I am fighting it!"],["RE","Copy, {d}. Keep calm, we will find out what is going on."]]]
+ "calm": [[["D","P{p}. The car is okay, just lacking a bit of top speed."],["RE","Copy. We will look at the wing levels for the race."]],[["D","P{p}. We are close, just lacking a bit of traction."],["RE","Copy. We will work on the diff settings for the race."]],[["D","Not the best, but the tyres were not in the window."],["RE","Understood, {d}. We will have a better plan tomorrow."]]],
+ "normal": [[["D","The balance is not quite there. Understeer into the slow corners."],["RE","Ok, we will find it out and adjust for the race."]],[["D","The car is a bit nervous on entry."],["RE","Copy, we will look at the front wing and brake balance."]],[["D","I feel there is more in the car than P{p}."],["RE","Agreed. Let us go through the data together."]]],
+ "rage": [[["D","This car has no grip! Every lap I am fighting it!"],["RE","Copy, {d}. Keep calm, we will find out what is going on."]],[["D","P{p}! We are miles off, what is going on with this car?!"],["RE","Copy, {d}. Stay calm, we will go through everything."]],[["D","I am driving on the limit and still nothing! Fix the car!"],["RE","Understood, {d}. We are on it."]]]
 },
 "quali_bad": {
- "calm": [[["D","Tough session. We are missing pace everywhere."],["RE","Understood. We will go through the data tonight and fix it."]]],
- "normal": [[["D","P{p}... the car just won't turn. I can't carry any speed."],["RE","Ok, we will find it out. Race pace is what matters now."]]],
- "rage": [[["D","What is this car?! It is undriveable! P{p} is a joke!"],["RE","Copy, {d}. I hear you. We will find the problem, I promise."]]]
+ "calm": [[["D","Tough session. We are missing pace everywhere."],["RE","Understood. We will go through the data tonight and fix it."]],[["D","We just do not have the pace today. I tried everything."],["RE","I know, {d}. Thank you for pushing. We will bounce back."]],[["D","It was a difficult lap, no confidence in the car."],["RE","Copy. We will work on the balance for tomorrow."]]],
+ "normal": [[["D","P{p}... the car just won't turn. I can't carry any speed."],["RE","Ok, we will find it out. Race pace is what matters now."]],[["D","P{p}. The car has no rear grip at all."],["RE","Ok, we will find it out. Keep your head up."]],[["D","I could not get the tyres working, lap after lap."],["RE","Understood, {d}. We will review the tyre preparation."]]],
+ "rage": [[["D","What is this car?! It is undriveable! P{p} is a joke!"],["RE","Copy, {d}. I hear you. We will find the problem, I promise."]],[["D","This is embarrassing! The car is not competitive at all!"],["RE","Copy, {d}. I hear you. Let us talk after the session."]],[["D","I am pushing like crazy and the car does nothing!"],["RE","Understood. We will find the problem, {d}."]]]
 },
 "race_win": {
- "calm": [[["D","Yes! What a car today, thank you everyone."],["RE","Brilliant drive, {d}. The strategy and the tyres were perfect."]]],
- "normal": [[["D","We did it. The car was really good in the final stint."],["RE","Well done. P1, that is a race win."]]],
- "rage": [[["D","FINALLY! This is what the car should have been doing all season!"],["RE","Copy that, {d}. Enjoy it. Great race."]]]
+ "calm": [[["D","{cele}"],["RE","Brilliant drive, {d}! P1, you have made the whole team proud."]],[["D","{cele}"],["RE","Copy that, {d}, and what a race it was! Enjoy this one, you deserve it."],["D","{cele2}"]],[["D","{cele}"],["RE","Congratulations, {d}! The car and the strategy were perfect today."]]],
+ "normal": [[["D","{cele}"],["RE","That is a victory for everyone back at the factory, {d}. Proud of you."]],[["D","{cele2}"],["RE","P1, {d}! Cool down lap now, soak it all in."]],[["D","{cele}"],["RE","Well done, {d}. Wins like this are why we do everything we do."]]],
+ "rage": []
 },
 "race_podium": {
- "calm": [[["D","P{p}, good result. The car felt strong on the tyres."],["RE","Great job, {d}. A podium finish."]]],
- "normal": [[["D","Podium, nice. We were a bit short on pace at the end."],["RE","Copy. We will check the data to find that last bit."]]],
- "rage": [[["D","P{p}? I could have won it if the car had more straight line speed!"],["RE","Understood, {d}. We will work on that. Good podium."]]]
+ "calm": [[["D","{cele}"],["RE","Great job, {d}! P{p}, a podium for the team."]],[["D","{cele}"],["RE","Copy, {d}. Fantastic drive, we are all very proud of you."]],[["D","{cele2}"],["RE","Well done, {d}. Enjoy the podium, you earned it."]]],
+ "normal": [[["D","{cele}"],["RE","P{p}, {d}! The whole team is celebrating back here."]],[["D","{cele2}"],["RE","Good race, {d}. That is a proud moment for all of us."]],[["D","{cele}"],["RE","Brilliant, {d}. Podium finish, thank you for everything."]]],
+ "rage": []
 },
 "race_points": {
- "calm": [[["D","P{p}. Solid points, the tyres held up well."],["RE","Good job, {d}. Points for the team."]]],
- "normal": [[["D","I was stuck in traffic the whole race. The car had no pace to pass."],["RE","Ok, we will find it out. Thanks for the push."]]],
- "rage": [[["D","I could not overtake anyone! The car is slow on the straights!"],["RE","Copy, {d}. We will bring upgrades. Good points today."]]]
+ "calm": [[["D","P{p}. Solid points, the tyres held up well."],["RE","Good job, {d}. Points for the team."]],[["D","Decent day, we kept it clean and scored."],["RE","Well done, {d}. Every point counts."]],[["D","I could have gone faster at the end, but P{p} is fine."],["RE","Copy. Good job, {d}, we will look for more next time."]]],
+ "normal": [[["D","I was stuck in traffic the whole race. The car had no pace to pass."],["RE","Ok, we will find it out. Thanks for the push."]],[["D","I got stuck behind a slower car for ages."],["RE","Understood. We will look at the strategy, {d}."]],[["D","The car was ok. I just lacked a bit of top speed."],["RE","Copy, we will bring that to the engineers."]]],
+ "rage": [[["D","I could not overtake anyone! The car is slow on the straights!"],["RE","Copy, {d}. We will bring upgrades. Good points today."]],[["D","I got a terrible strategy! Why did we not pit earlier?!"],["RE","Copy, {d}. We will review it together, calmly."]],[["D","Every time I got close, the car lost the front. Terrible!"],["RE","Understood, {d}. We will check the data."]]]
 },
 "race_out": {
- "calm": [[["D","Tough race. The tyres just fell away at the end."],["RE","Understood. We will review the tyre data after the race."]]],
- "normal": [[["D","No pace today. The car was sliding everywhere."],["RE","Ok, we will find it out. Let's reset for next weekend."]]],
- "rage": [[["D","P{p}?! This car is a disaster! I am wasting my time!"],["RE","Copy, {d}. We hear you. We will work on it, I promise."]]]
+ "calm": [[["D","Tough race. The tyres just fell away at the end."],["RE","Understood. We will review the tyre data after the race."]],[["D","No luck today, we were stuck in the midfield."],["RE","Copy. We will regroup and come back stronger."]],[["D","The pace was not there. We need to find more."],["RE","Agreed, {d}. We will keep working."]]],
+ "normal": [[["D","No pace today. The car was sliding everywhere."],["RE","Ok, we will find it out. Let us reset for next weekend."]],[["D","The tyres were gone after ten laps."],["RE","Understood. We will review the tyre management."]],[["D","I did everything I could, the car just was not quick enough."],["RE","I know, {d}. Thank you, we will improve."]]],
+ "rage": [[["D","P{p}?! This car is a disaster! I am wasting my time!"],["RE","Copy, {d}. We hear you. We will work on it, I promise."]],[["D","What a waste of a weekend! This car is not good enough!"],["RE","Copy, {d}. We will find answers."]],[["D","I am driving like crazy and I am still P{p}! Unbelievable!"],["RE","Understood. Let us talk later."]]]
 },
 "race_dnf": {
- "calm": [[["D","I have lost power. I have to stop the car."],["RE","Copy, {d}. Stop the car safely. We will check what happened."]]],
- "normal": [[["D","Something broke at the rear. The car just died."],["RE","Ok, bring it into the pits. We will find out what happened."]]],
- "rage": [[["D","Not again! The car broke AGAIN! What are you doing back there?!"],["RE","Copy, {d}. I am sorry. We will investigate right away."]]]
+ "calm": [[["D","I have lost power. I have to stop the car."],["RE","Copy, {d}. Stop the car safely. We will check what happened."]],[["D","The engine does not feel right, I have to stop."],["RE","Copy {d}. Box this lap, we will check it."]],[["D","I think it is a brake issue. I cannot continue."],["RE","Understood. Stop the car in a safe place."]]],
+ "normal": [[["D","Something broke at the rear. The car just died."],["RE","Ok, bring it into the pits. We will find out what happened."]],[["D","Gearbox problem, I am losing drive."],["RE","Copy. Retire the car, {d}, it is not worth the risk."]],[["D","There is smoke in the cockpit, something is wrong."],["RE","Ok, stop the car now, {d}."]]],
+ "rage": [[["D","Not again! The car broke AGAIN! What are you doing back there?!"],["RE","Copy, {d}. I am sorry. We will investigate right away."]],[["D","Another failure! How many times do I have to retire?!"],["RE","I am sorry, {d}. We will investigate every part."]],[["D","I was flying and the car just stopped! Unbelievable!"],["RE","Copy, {d}. We will find out what happened."]]]
 },
 "race_pen": {
- "calm": [[["D","That penalty hurt us. I thought I was within the limits."],["RE","Copy. We will look at the onboard and see what happened."]]],
- "normal": [[["D","Five seconds, that was harsh. The car was a handful in that corner."],["RE","Ok, we will find out why the car slid there."]]],
- "rage": [[["D","That penalty is a joke! The car was undriveable out of that corner!"],["RE","Understood, {d}. We will check it and talk to the stewards."]]]
+ "calm": [[["D","That penalty hurt us. I thought I was within the limits."],["RE","Copy. We will look at the onboard and see what happened."]],[["D","Five seconds, ok. I will try to make it up."],["RE","Copy. We will manage the gap, {d}."]],[["D","I did not see the line, my mistake."],["RE","Understood. Stay focused for the rest of the race."]]],
+ "normal": [[["D","Five seconds, that was harsh. The car was a handful in that corner."],["RE","Ok, we will find out why the car slid there."]],[["D","That felt like a racing incident, to be honest."],["RE","Copy. We will check the replay with the stewards."]],[["D","The penalty was harsh but let us move on."],["RE","Ok, {d}. Let us keep pushing."]]],
+ "rage": [[["D","That penalty is a joke! The car was undriveable out of that corner!"],["RE","Understood, {d}. We will check it and talk to the stewards."]],[["D","Are you kidding me?! Everybody does that corner!"],["RE","Copy, {d}, we will raise it after the race."]],[["D","This is ridiculous! The stewards are against us!"],["RE","Calm down, {d}. We will review it."]]]
+},
+"race_dns": {
+ "calm": [[["D","I was ready, but the car would not start. Disappointing."],["RE","Understood, {d}. We will find out what happened in the garage."]],[["D","I sat in the car and nothing happened."],["RE","Copy, {d}. We are sorry, we will investigate."]]],
+ "normal": [[["D","We never even left the grid. That is painful."],["RE","I know, {d}. We will fix it for the next race."]],[["D","Did the electronics fail again?"],["RE","Probably, {d}. The engineers are checking now."]]],
+ "rage": [[["D","Did not start?! How is this possible at this level?!"],["RE","I am sorry, {d}. We will have a full review."]],[["D","I cannot believe it! All weekend work for nothing!"],["RE","Copy, {d}. We will find the problem, I promise."]]]
+},
+"race_dsq": {
+ "calm": [[["D","Disqualified? That is hard to take, but I understand."],["RE","Copy, {d}. We will check the technical report."]],[["D","I did my job on track. This is out of my hands."],["RE","You did, {d}. We will take responsibility."]]],
+ "normal": [[["D","What happened with the car? Why the DSQ?"],["RE","We are checking the scrutineering report, {d}."]],[["D","A disqualification, after all that work..."],["RE","I know, {d}. We will make sure it does not happen again."]]],
+ "rage": [[["D","Disqualified?! This is a joke! I drove my heart out!"],["RE","Copy, {d}. We are sorry, we will investigate."]],[["D","How can the team get this wrong?! Unacceptable!"],["RE","You are right to be angry, {d}. We will fix it."]]]
 }
 }
 }

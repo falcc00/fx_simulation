@@ -53,11 +53,16 @@ tr:hover td{background:#ffffff08}.bar i{transition:width .4s linear}
 .split{display:grid;grid-template-columns:1fr 320px;gap:12px;align-items:start}@media(max-width:820px){.split{grid-template-columns:1fr}}
 .side .rc{padding:12px 12px 8px;margin-bottom:10px}.side .rn{font-size:40px}.side .rt{font-size:22px}.side .q{font-size:13.5px;margin:10px 0;max-width:96%}
 .dl{margin-left:8px;color:var(--t);opacity:.85}.dl.m{color:var(--m)}
+select{font:inherit;color:var(--t);background:var(--s2);border:1px solid var(--b);border-radius:10px;padding:8px 10px;max-width:100%}
+html{-webkit-text-size-adjust:100%}button,select{touch-action:manipulation}.stt{flex-wrap:wrap}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:4;background:var(--s)}
+.map{background:radial-gradient(ellipse at 50% 40%,#16283a,#0b1118)}
+@media(max-width:600px){#app{padding:10px}.card{padding:12px}h1{font-size:22px}button{padding:10px 12px;min-height:40px}button.s{min-height:34px;padding:6px 10px}td,th{padding:7px 5px}table{font-size:13px}.hm{display:none}.steps{gap:3px}.st{font-size:10px;padding:7px 1px}.stt{gap:6px}#tbl{max-height:70vh!important}.mod .card{max-height:88vh;overflow:auto}.mk{width:12px;height:12px}.row{gap:8px}.rt{font-size:26px}.rn{font-size:44px}.drw{width:min(260px,80vw)!important}}
 </style></head><body><div id="app"></div><div id="toast"></div>
 <script>
 const $=s=>document.querySelector(s),rnd=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const SK=n=>'pitwall_save_'+n,SETUP='pitwall_setup',PTS=[25,18,15,12,10,8,6,4,2,1],SPTS=[8,7,6,5,4,3,2,1],SPRINT=[1,5,6,10,13,17];
-let SLOT=+localStorage.getItem('pitwall_slot')||1,SM=false,DLG={},NP=null,PR=null,MENU=false,CV=0,RC=[];
+let SLOT=+localStorage.getItem('pitwall_slot')||1,SM=false,DLG={},NP=null,PR=null,MENU=false,CV=0,RC=[],CT={};
 const TY={S:{l:20,p:-.55,c:'#ef4444'},M:{l:30,p:-.2,c:'#facc15'},H:{l:42,p:0,c:'#e5e7eb'},I:{l:30,p:0,c:'#22c55e'},W:{l:26,p:0,c:'#3b82f6'}};
 const MM={dry:{S:0,M:0,H:0,I:4,W:6},inter:{S:7,M:7,H:7,I:0,W:1.5},wet:{S:10,M:10,H:10,I:2.5,W:0}},SL={dry:0,inter:.06,wet:.1},WX={dry:'Dry',inter:'Intermediate',wet:'Wet'};
 const ic=(p)=>`<svg class="i" viewBox="0 0 24 24"><path d="${p}"/></svg>`;
@@ -77,18 +82,19 @@ const pucost=p=>Math.round(lerp((p[2]+p[3]+p[4])/3,D.meta.pu.avg,D.meta.pu.cost)
 const C=()=>D.circuits[Math.min(G.round,23)],tc=t=>G.teams[t].c,sh=d=>d.n.replace(/^(\S)\S*\s/,'$1. ');
 const myIds=()=>Object.values(G.drv).filter(d=>d.t=='P').map(d=>d.id);
 const engOf=d=>d.t=='P'?Object.values(G.eng).find(e=>e.own&&e.dv==d.id):null;
-const eff=(d,k)=>{if(d.t!='P')return d[k];const e=engOf(d);return d[k]*.65+(e?e[k]:55)*.35};
+const pen=d=>d.t=='P'&&d.ad!=null&&d.ad<1?(1-d.ad)*12:0;
+const eff=(d,k)=>{if(d.t!='P')return d[k];const e=engOf(d);return (d[k]-pen(d))*.65+(e?e[k]:55)*.35};
 const chassis=()=>{const c=G.car,df=DF[Math.min(G.round,23)];return (c.aero*df+c.spd*(1-df))*.65+c.mech*.35};
 const carEff=d=>d.t=='P'?chassis()*.6+G.pu.pw*.4:G.teams[d.t].car;
-const base=d=>C()[2]-(carEff(d)*.6+d.r*.4-80)*.12-(d.cor-75)*.012;
+const base=d=>C()[2]-(carEff(d)*.6+(d.r-pen(d))*.4-80)*.12-(d.cor-pen(d)-75)*.012;
 const ft=s=>Math.floor(s/60)+':'+(s%60).toFixed(3).padStart(6,'0');
 const stats=d=>`<span class="mono stt">ATT <b>${d.att}</b> DEF <b>${d.def}</b> TYR <b>${d.tyr}</b> COR <b>${d.cor}</b></span>`;
 const estats=e=>`<span class="mono stt">ATT <b>${e.att}</b> DEF <b>${e.def}</b> TYR <b>${e.tyr}</b></span>`;
 function build(su){
- G={season:2026,round:0,money:40,news:[],dp:{},tp:{},teams:{},drv:{},eng:{},wk:null,name:su.name,color:su.color,car:{aero:62,spd:62,mech:62,care:60,rel:0},parts:{},rd:[],wt:0,pu:{n:D.pu[su.pu][1],pw:D.pu[su.pu][2],rel:D.pu[su.pu][3],eff:D.pu[su.pu][4]}};
+ G={season:2026,round:0,money:40,news:[],dp:{},tp:{},teams:{},drv:{},eng:{},wk:null,name:su.name,color:su.color,country:su.country,car:{aero:62,spd:62,mech:62,care:60,rel:0},parts:{},rd:[],wt:0,pu:{n:D.pu[su.pu][1],pw:D.pu[su.pu][2],rel:D.pu[su.pu][3],eff:D.pu[su.pu][4]}};
  D.teams.forEach(t=>G.teams[t[0]]={n:t[1],c:t[2],car:t[3]});G.teams.P={n:su.name,c:su.color};
  D.drivers.forEach((d,i)=>G.drv[i]={id:i,n:d[0],s:d[1],r:d[2],att:d[3],def:d[4],tyr:d[5],cor:d[6],t:d[7]||'FA'});
- su.drv.forEach(i=>G.drv[i].t='P');
+ su.drv.forEach(i=>{G.drv[i].t='P';G.drv[i].ad=0});
  D.engineers.forEach((e,i)=>G.eng[i]={id:i,n:e[0],att:e[1],def:e[2],tyr:e[3],own:false,dv:null});
  for(const k in su.eng)if(su.eng[k]!=null){G.eng[su.eng[k]].own=true;G.eng[su.eng[k]].dv=+k}
  fill();wk();mig();G.puIdx=su.pu;save();
@@ -96,10 +102,10 @@ function build(su){
 function fill(){D.teams.forEach(t=>{let n=Object.values(G.drv).filter(d=>d.t==t[0]).length;while(n++<2){const p=Object.values(G.drv).filter(d=>d.t=='FA').sort((a,b)=>b.r-a.r).slice(0,8);p[Math.floor(Math.random()*p.length)].t=t[0]}})}
 function wk(){const w=Math.random(),sp=SPRINT.includes(G.round);G.wk={step:0,grid:null,sgrid:null,wx:w<.08?'wet':w<.2?'inter':'dry',kinds:sp?['FP','SQ','SPR','Q','R']:['FP','FP','FP','Q','R'],labels:sp?['FP1','Sprint Quali','Sprint','Quali','Race']:['FP1','FP2','FP3','Quali','Race']}}
 function mig(){if(!G.car){G.car={aero:G.chassis||62,spd:G.chassis||62,mech:G.chassis||62,care:60,rel:0};G.parts={};G.rd=[];G.wt=0}
- G.career=G.career||{td:0,tc:0,w:0,p:0,pl:0,fl:0,best:0};G.hist=G.hist||[];G.spent=G.spent||0;G.cap=G.cap||120;G.regYear=G.regYear||2030;G.sw=G.sw||0;
+ G.country=G.country||'United Kingdom';G.career=G.career||{td:0,tc:0,w:0,p:0,pl:0,fl:0,best:0};G.hist=G.hist||[];G.spent=G.spent||0;G.cap=G.cap||120;G.regYear=G.regYear||2030;G.sw=G.sw||0;
  if(G.puIdx==null)G.puIdx=Math.max(0,D.pu.findIndex(p=>p[1]==G.pu.n));
  if(G.wk&&!G.wk.kinds){G.wk.kinds=['FP','FP','FP','Q','R'];G.wk.labels=['FP1','FP2','FP3','Quali','Race']}}
-function head(){return `<div class="row card" style="padding:12px"><b style="color:var(--a)">${G.name}</b><span class="m">S${G.season}</span><span class="sp"></span><span class="mono">$${G.money.toFixed(1)}M · cap ${G.spent.toFixed(0)}/${G.cap}</span></div>`}
+function head(){return `<div class="row card top" style="padding:12px"><b style="color:var(--a)">${G.name}</b><span class="m">${G.country||''} · S${G.season}</span><span class="sp"></span><span class="mono">$${G.money.toFixed(1)}M · cap ${G.spent.toFixed(0)}/${G.cap}</span></div>`}
 function render(){
  if(V=='hub')hub();else if(V=='res')resView();else if(V=='end')endView();
  else{$('#app').innerHTML=`${head()}<div class="split"><div><div class="card"><div class="row"><h2 id="stt" class="sp"></h2><span id="tmr" class="mono"></span></div><div class="bar"><i id="pg" style="width:0"></i></div><div id="ctl" style="margin-top:12px"></div></div><div class="card wrap" style="max-height:560px;overflow-y:auto" id="tbl"></div></div><div id="side" class="side"></div></div>`;ctl();draw()}
@@ -110,10 +116,10 @@ function hub(){
  if(TAB=='race'){
   h+=`<div class="card"><h3>Round ${G.round+1} / 24${SPRINT.includes(G.round)?' · SPRINT WEEKEND':''}</h3><h1>${c[0]} GP</h1><div class="m">${c[1]} laps · ref. lap ${ft(c[2])} · Weather: <b style="color:var(--t)">${WX[w.wx]}</b></div>
   <div class="steps">${w.labels.map((s,i)=>`<div class="st ${i<w.step?'d':i==w.step?'c':''}">${s}</div>`).join('')}</div>
-  <div class="row"><button class="p" onclick="startS('${w.kinds[w.step]}')">${I.play} Start ${w.labels[w.step]}</button>${['FP','Q','SQ'].includes(w.kinds[w.step])?`<button onclick="startS('${w.kinds[w.step]}',true)">${I.zap} Auto-run</button>`:''}</div></div>
+  ${fpSel()}<div class="row"><button class="p" onclick="startS('${w.kinds[w.step]}')">${I.play} Start ${w.labels[w.step]}</button>${['FP','Q','SQ'].includes(w.kinds[w.step])?`<button onclick="startS('${w.kinds[w.step]}',true)">${I.zap} Auto-run</button>`:''}</div></div>
   <div class="card"><h3>${G.season} calendar</h3>${mapHTML()}<div id="ginfo" class="m" style="margin-top:8px"></div></div>
   <div class="card wrap" style="max-height:340px;overflow-y:auto"><h3>All circuits</h3><table><tr><th>#</th><th>Grand Prix</th><th>Circuit</th><th>Laps</th><th></th></tr>${D.circuits.map((x,i)=>`<tr onclick="gfocus(${i})" style="cursor:pointer;${i==G.round?'background:#ffffff0d':''}"><td class="mono">${i+1}</td><td>${x[0]}${SPRINT.includes(i)?' <span class="mono" style="color:#facc15">SPRINT</span>':''}</td><td class="m">${x[5]}</td><td class="mono">${x[1]}</td><td class="mono ${i<G.round?'up':''}">${i<G.round?'Done':i==G.round?'Next':''}</td></tr>`).join('')}</table></div>
-  <div class="card"><h3>Your drivers</h3>${myIds().map(i=>{const d=G.drv[i],e=engOf(d);return `<div style="margin-bottom:10px"><div class="row"><span class="dot" style="background:${G.color}"></span><b>${d.n}</b><span class="sp"></span><span class="mono">OVR ${d.r} · ${G.dp[i]||0} pts</span></div>${stats(d)}<div class="m">Engineer: ${e?e.n:'none (hire one in Engineers)'}</div></div>`}).join('')}</div>`;
+  <div class="card"><h3>Your drivers</h3>${myIds().map(i=>{const d=G.drv[i],e=engOf(d);return `<div style="margin-bottom:10px"><div class="row"><span class="dot" style="background:${G.color}"></span><b>${d.n}</b><span class="sp"></span><span class="mono">OVR ${d.r} · ${G.dp[i]||0} pts</span></div>${stats(d)}${d.ad!=null&&d.ad<1?`<div class="row" style="margin:4px 0"><span class="m">Adaptation</span><div class="bar sp"><i style="width:${Math.round(d.ad*100)}%"></i></div><span class="mono">${Math.round(d.ad*100)}%</span></div>`:''}<div class="m">Engineer: ${e?e.n:'none (hire one in Engineers)'}</div></div>`}).join('')}</div>`;
   if(G.news.length)h+=`<div class="card"><h3>News</h3>${G.news.map(n=>`<div class="m">${n}</div>`).join('')}</div>`;
  }
  if(TAB=='std'){
@@ -123,7 +129,7 @@ function hub(){
  }
  if(TAB=='mkt'){
   const L=Object.values(G.drv).filter(d=>d.t!='P'&&d.t!='A').sort((a,b)=>b.r-a.r);
-  h+=`<div class="card wrap"><h3>Recruit / trade drivers</h3><table><tr><th>Driver</th><th>Ser.</th><th>Team</th><th>OVR</th><th>ATT</th><th>DEF</th><th>TYR</th><th>COR</th><th>Price</th><th></th></tr>${L.map(d=>`<tr><td><span class="dot" style="background:${d.t=='FA'?'#555':tc(d.t)}"></span>${d.n}</td><td class="m">${d.s}</td><td class="m">${d.t=='FA'?'Free agent':G.teams[d.t].n}</td><td class="mono">${d.r}</td><td class="mono">${d.att}</td><td class="mono">${d.def}</td><td class="mono">${d.tyr}</td><td class="mono">${d.cor}</td><td class="mono">$${price(d)}M</td><td><button class="s" onclick="TR=${d.id};hub()">Recruit</button></td></tr>`).join('')}</table></div>`;
+  h+=`<div class="card wrap"><h3>Recruit / trade drivers</h3><table><tr><th>Driver</th><th>Ser.</th><th>Team</th><th>OVR</th><th class="hm">ATT</th><th class="hm">DEF</th><th class="hm">TYR</th><th class="hm">COR</th><th>Price</th><th></th></tr>${L.map(d=>`<tr><td><span class="dot" style="background:${d.t=='FA'?'#555':tc(d.t)}"></span>${d.n}</td><td class="m">${d.s}</td><td class="m">${d.t=='FA'?'Free agent':G.teams[d.t].n}</td><td class="mono">${d.r}</td><td class="mono hm">${d.att}</td><td class="mono hm">${d.def}</td><td class="mono hm">${d.tyr}</td><td class="mono hm">${d.cor}</td><td class="mono">$${price(d)}M</td><td><button class="s" onclick="TR=${d.id};hub()">Recruit</button></td></tr>`).join('')}</table></div>`;
   if(TR!=null){const t=G.drv[TR];h+=`<div class="mod"><div class="card"><h2>Recruit ${t.n}</h2><p class="m">Pick which driver to replace. You get 50% of his value back; he moves to ${t.t=='FA'?'the free agent pool':G.teams[t.t].n}.</p>${myIds().map(i=>{const d=G.drv[i];return `<button style="width:100%;margin-bottom:8px" onclick="trade(${TR},${i})">Replace ${d.n} · cost $${price(t)-Math.round(price(d)/2)}M</button>`}).join('')}<button onclick="TR=null;hub()">Cancel</button></div></div>`}
  }
  if(TAB=='eng'){
@@ -132,7 +138,7 @@ function hub(){
   <div class="card wrap"><h3>Engineer market</h3><table>${mk.map(e=>`<tr><td>${e.n}</td><td>${estats(e)}</td><td class="mono">$${ecost(e)}M</td><td><button class="s" onclick="hire(${e.id})">Hire</button></td></tr>`).join('')}</table></div>`;
  }
  if(TAB=='car')h+=carTab();if(TAB=='acad')h+=acadTab();if(TAB=='cr')h+=careerTab();if(SM)h+=savesModal();
- $('#app').innerHTML=h;if(TAB=='race'){loadMap();gfocus(Math.min(G.round,23))}
+ $('#app').innerHTML=h;if(TAB=='race')gfocus(Math.min(G.round,23));
 }
 const pcost=(p,l)=>Math.round(5+l*3+Object.values(p.e).reduce((a,b)=>a+b,0)*2),pch=l=>clamp(.65+G.wt*.05-l*.04,.3,.95);
 function carTab(){
@@ -153,15 +159,15 @@ function rdTick(){const out=[];G.rd=G.rd.filter(r=>{if(--r.left>0)return true;co
 function hire(id){const e=G.eng[id];if(Object.values(G.eng).filter(x=>x.own).length>=2)return toast('Max 2 engineers');if(!spend(ecost(e)))return;e.own=true;hub()}
 function assign(id,dv){Object.values(G.eng).forEach(x=>{if(x.dv==dv)x.dv=null});G.eng[id].dv=dv;hub()}
 function trade(t,m){const a=G.drv[t],b=G.drv[m],c=price(a)-Math.round(price(b)/2);if(c>0&&!spend(c)){TR=null;hub();return}
- if(c<=0)G.money-=c;Object.values(G.eng).forEach(x=>{if(x.dv==m)x.dv=null});b.t=a.t;a.t='P';TR=null;toast(a.n+' joined your team!');hub()}
+ if(c<=0)G.money-=c;Object.values(G.eng).forEach(x=>{if(x.dv==m)x.dv=null});b.t=a.t;a.t='P';a.ad=0;delete b.ad;TR=null;toast(a.n+' joined your team!');hub()}
 function startS(kk,chain){const k=kk=='SQ'?'Q':kk=='SPR'?'R':kk;
- const L=Object.values(G.drv).filter(d=>d.t!='FA'&&d.t!='A').map(d=>d.id);
- S={k,ids:L,tick:0,best:{},push:3,boost:0,seg:0,elim:[[],[]],act:L.slice(),lap:0,sc:0,chain:!!chain,spr:kk=='SPR',sq:kk=='SQ',fl:{t:1e9},ph:{},ev:[],talk:'',done:false,N:k=='R'?(kk=='SPR'?Math.round(C()[1]/3):C()[1]):k=='Q'?150:50};
- if(k=='R'){const wx=G.wk.wx;S.cars=(S.spr?G.wk.sgrid:G.wk.grid).map((id,p)=>{const ty=wx=='wet'?'W':wx=='inter'?'I':['S','M','M','H','H'][Math.floor(Math.random()*5)];return{id,t:p*.3,w:0,pits:0,tyre:ty,used:[ty],dnf:false,form:rnd(-.4,.4),th:rnd(0,.1),g:p+1}})}
+ let L=Object.values(G.drv).filter(d=>d.t!='FA'&&d.t!='A').map(d=>d.id);const used=[];if(k=='FP'){const sw=G.wk.fp||{};L=L.map(id=>{const a=sw[id];if(a!=null&&G.drv[a]&&G.drv[a].t=='A'){G.drv[a].t='P';used.push(a);return a}return id})}
+ S={k,ids:L,tick:0,best:{},push:3,boost:0,seg:0,elim:[[],[]],act:L.slice(),lap:0,sc:0,fpUse:used,chain:!!chain,spr:kk=='SPR',sq:kk=='SQ',fl:{t:1e9},ph:{},ev:[],talk:'',done:false,N:k=='R'?(kk=='SPR'?Math.round(C()[1]/3):C()[1]):k=='Q'?150:50};
+ if(k=='R'){const wx=G.wk.wx;S.cars=(S.spr?G.wk.sgrid:G.wk.grid).map((id,p)=>{const ty=wx=='wet'?'W':wx=='inter'?'I':['S','M','M','H','H'][Math.floor(Math.random()*5)];return{id,t:p*.3,w:0,pits:0,tyre:ty,used:[ty],dnf:false,form:rnd(-.4,.4),th:rnd(0,.1),g:p+1}});S.cars.forEach(c=>{const d=G.drv[c.id];if(Math.random()<(d.t=='P'?(100-G.pu.rel-G.car.rel)*.0006+.004:.008)){c.dnf=true;c.dns=true;c.dl=0;if(d.t=='P')note(sh(d)+' – DID NOT START')}})}
  V='ses';render();clearInterval(TM);TM=setInterval(step,k=='R'?350:400);
 }
 function fin(){clearInterval(TM);if(S.chain&&S.k=='FP'&&!S.nx){S.nx=1;setTimeout(autoNext,1100)}}
-function autoNext(){if(!S||!S.done)return;G.wk.step++;const k=G.wk.kinds[G.wk.step];if(['FP','Q','SQ'].includes(k))startS(k,true);else{V='hub';render()}}
+function autoNext(){if(!S||!S.done)return;restoreFP();G.wk.step++;const k=G.wk.kinds[G.wk.step];if(['FP','Q','SQ'].includes(k))startS(k,true);else{V='hub';render()}}
 function step(){S.k=='R'?raceStep():fpStep();if(S.done)fin();draw();ctl()}
 function skip(){while(!S.done)S.k=='R'?raceStep():fpStep();fin();draw();ctl()}
 function lapTry(id,pr){const d=G.drv[id],mine=d.t=='P';
@@ -171,13 +177,20 @@ const rk=l=>l.slice().sort((a,b)=>(S.best[a]??1e9)-(S.best[b]??1e9));
 function fpStep(){
  S.tick++;if(S.boost>0)S.boost--;(S.k=='FP'?S.ids:S.act).forEach(i=>lapTry(i,S.k=='FP'?.22:.3));if(S.tick%50==12){S.b0={};rk(S.k=='FP'?S.ids:S.act).forEach((id,i)=>S.b0[id]=i+1)}
  if(S.k=='Q'&&S.tick%50==0&&S.tick<150){const o=rk(S.act),keep=S.seg==0?16:8;S.elim[S.seg]=o.slice(keep);S.act=o.slice(0,keep);S.seg++;S.best={};S.b0=null}
- if(S.tick>=S.N){S.done=true;if(S.k=='Q'){const g=[...rk(S.act),...S.elim[1],...S.elim[0]];if(S.sq)G.wk.sgrid=g;else{G.wk.grid=g;if(G.drv[g[0]].t=='P'){G.career.pl++;note('Pole position!')}}CV=0;RC=[];S.talk=myIds().map(i=>{const p=g.indexOf(i)+1;return convo(p<=6?'quali_good':p<=14?'quali_mid':'quali_bad',G.drv[i],p)}).join('')}}
+ if(S.tick>=S.N){S.done=true;if(S.k=='FP')fpDone();if(S.k=='Q'){const g=[...rk(S.act),...S.elim[1],...S.elim[0]];if(S.sq)G.wk.sgrid=g;else{G.wk.grid=g;if(G.drv[g[0]].t=='P'){G.career.pl++;note('Pole position!')}}CV=0;RC=[];S.talk=myIds().map(i=>{const p=g.indexOf(i)+1;return convo(p==1?'quali_pole':p<=6?'quali_good':p<=14?'quali_mid':'quali_bad',G.drv[i],p)}).join('')}}
 }
 const rorder=()=>[...S.cars.filter(c=>!c.dnf).sort((a,b)=>a.t-b.t),...S.cars.filter(c=>c.dnf).sort((a,b)=>b.dl-a.dl)];
 function pickTyre(c,rem,wx){if(wx=='wet')return'W';if(wx=='inter')return'I';
  let o=['S','M','H'].filter(x=>TY[x].l*.9>=rem);if(!o.length)o=['H'];
  if(new Set(c.used).size<2){const f=o.filter(x=>x!=c.tyre);if(f.length)o=f}return o[0]}
+function fpDone(){S.fpUse.forEach(a=>{const d=G.drv[a];['r','att','def','tyr','cor'].forEach(k=>{if(Math.random()<.55)d[k]=Math.min(95,d[k]+1)});note(d.n+' gained experience in practice')});
+ S.ids.forEach(id=>{const d=G.drv[id];if(d.t=='P'&&d.ad!=null&&d.ad<1&&!S.fpUse.includes(id))d.ad=Math.min(1,d.ad+.03)})}
+function restoreFP(){if(S&&S.fpUse&&S.fpUse.length){S.fpUse.forEach(a=>{if(G.drv[a].t=='P')G.drv[a].t='A'});S.fpUse=[]}}
+function fpSel(){const w=G.wk,A=Object.values(G.drv).filter(d=>d.t=='A');if(w.kinds[w.step]!='FP'||!A.length)return'';const sw=w.fp||{};
+ return `<div style="margin:10px 0"><div class="m" style="margin-bottom:6px">Free practice: let an academy driver run one of your cars. They gain stats and the race driver sits out.</div>${myIds().map(i=>`<div class="row" style="margin-bottom:6px"><span class="m">Car of ${sh(G.drv[i])}:</span><select onchange="setFP(${i},this.value)"><option value="">${G.drv[i].n} (race driver)</option>${A.map(a=>`<option value="${a.id}" ${sw[i]==a.id?'selected':''} ${Object.keys(sw).some(k=>k!=i&&sw[k]==a.id)?'disabled':''}>${a.n} · ${a.s} · OVR ${a.r}</option>`).join('')}</select></div>`).join('')}</div>`}
+function setFP(r,a){G.wk.fp=G.wk.fp||{};if(a==='')delete G.wk.fp[r];else G.wk.fp[r]=+a;hub()}
 function say(k,v){S.ev.push([k,v&&v.d])}
+const st=c=>c.dns?'DNS':c.dsq?'DSQ':c.dnf?'DNF':'';
 const arr=n=>n?`<span class="mono dl ${n>0?'':'m'}">${n>0?'▲':'▼'}${Math.abs(n)}</span>`:'';
 function savePNG(k){const c=RC[k];if(!c)return;
  (document.fonts?document.fonts.load('800 40px "Space Grotesk"').catch(()=>{}):Promise.resolve()).then(()=>{
@@ -186,15 +199,17 @@ function savePNG(k){const c=RC[k];if(!c)return;
  x.fillStyle=c.color;x.textAlign='left';x.font=`800 200px ${F}`;x.fillText(c.lab,60,310);
  let fs=120,nm=c.name.toUpperCase();x.textAlign='right';x.font=`800 ${fs}px ${F}`;while(x.measureText(nm).width>640&&fs>40){fs-=4;x.font=`800 ${fs}px ${F}`}x.fillText(nm,W-60,170);
  x.fillStyle='#fff';x.font=`800 120px ${F}`;x.fillText('RADIO',W-60,300);
- const wrap=(t,w)=>{const o=[];let l='';t.toUpperCase().split(' ').forEach(wd=>{const tt=l?l+' '+wd:wd;if(x.measureText(tt).width>w&&l){o.push(l);l=wd}else l=tt});o.push(l);return o};
+ const wrap=(t,w)=>{const o=[];let l='';const cj=/[\u3000-\u9fff\uac00-\ud7af\u0e00-\u0e7f]/.test(t),sp=cj?'':' ';t.toUpperCase().split(sp).forEach(wd=>{const tt=l?l+sp+wd:wd;if(x.measureText(tt).width>w&&l){o.push(l);l=wd}else l=tt});o.push(l);return o};
  let sz=68,L;for(;;){x.font=`600 ${sz}px ${F}`;L=c.lines.map(([w,t])=>wrap('“'+t+'”',860));const h=L.reduce((a,l)=>a+l.length*sz*1.2+70,0);if(h<=800||sz<=30)break;sz-=4}
  let y=430;c.lines.forEach(([w],i)=>{x.font=`600 ${sz}px ${F}`;x.fillStyle=w=='D'?c.color:'#fff';x.textAlign=w=='D'?'right':'left';L[i].forEach(l=>{x.fillText(l,w=='D'?W-60:60,y);y+=sz*1.2});y+=70});
  x.textAlign='center';x.fillStyle='rgba(255,255,255,.55)';x.font=`600 34px ${F}`;x.fillText('Fx Simulation',W/2,H-50);
  cv.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`radio-${c.name.replace(/\\s+/g,'-')}.png`;a.click()})})}
 function pickMood(w){let r=Math.random()*(w.calm+w.normal+w.rage);for(const m of['calm','normal','rage'])if((r-=w[m])<0)return m;return'normal'}
-function convo(ctx,d,p,lab){const C=DLG.convos&&DLG.convos[ctx];if(!C)return'';const L=C[pickMood(DLG.weights[ctx])],cv=L[Math.floor(Math.random()*L.length)],e=engOf(d),en=e?e.n:'Race Engineer',rp=t=>t.replace(/\{p\}/g,p).replace(/\{d\}/g,sh(d)).replace(/\{e\}/g,en);
+function cele(){const m={};(CT.countries||'').split(',').forEach(x=>{const p=x.split(':');m[p[0]]=p[1]});const c=G.country||'United Kingdom',L=(CT.cele&&CT.cele[m[c]||'en'])||['Yes!'],h=[...c].reduce((a,ch)=>a+ch.charCodeAt(0),0),sp=CT.special&&CT.special[c];return[sp||L[h%L.length],L[(h+1)%L.length]]}
+function convo(ctx,d,p,lab){const C=DLG.convos&&DLG.convos[ctx];if(!C)return'';let L=C[pickMood(DLG.weights[ctx])];if(!L||!L.length)L=C.normal&&C.normal.length?C.normal:C.calm;
+ const cv=L[Math.floor(Math.random()*L.length)],e=engOf(d),en=e?e.n:'Race Engineer',cc=cele(),rp=t=>t.replace(/\{cele2\}/g,cc[1]).replace(/\{cele\}/g,cc[0]).replace(/\{p\}/g,p).replace(/\{d\}/g,sh(d)).replace(/\{e\}/g,en);
  RC.push({lab:lab||'P'+p,name:d.n.replace(/^\S+\s/,''),color:G.color,lines:cv.map(([w,t])=>[w,rp(t)])});
- return `<div class="rc" style="--tc:${G.color}"><div class="rh"><div class="rn">${lab||'P'+p}</div><div class="rt">${d.n.replace(/^\S+\s/,'')}<span>RADIO</span></div></div>${cv.map(([w,t])=>`<div class="q ${w=='D'?'dr':'re'}" style="animation-delay:${(.2+CV++*.7).toFixed(1)}s">“${rp(t)}”</div>`).join('')}<div style="text-align:right;margin-top:6px"><button class="s" onclick="savePNG(${RC.length-1})">Save PNG</button></div></div>`}
+ return `<div class="rc" style="--tc:${G.color}"><div class="rh"><div class="rn">${lab||'P'+p}</div><div class="rt">${d.n.replace(/^\S+\s/,'')}<span>RADIO</span></div></div>${cv.map(([w,t])=>`<div dir="auto" class="q ${w=='D'?'dr':'re'}" style="animation-delay:${(.2+CV++*.7).toFixed(1)}s">“${rp(t)}”</div>`).join('')}<div style="text-align:right;margin-top:6px"><button class="s" onclick="savePNG(${RC.length-1})">Save PNG</button></div></div>`}
 function callSC(n){S.sc=n;say('rc_sc');note('SAFETY CAR deployed',330)}
 function crash(c,a){const cd=G.drv[c.id],ad=G.drv[a.id],x=Math.random()<.65?c:a,out=Math.random()<.2?(Math.random()<.5?c:a):null;c.t+=rnd(3,9);a.t+=rnd(3,9);say('rc_collision',{d:sh(cd),n:sh(ad)});
  if(out){out.dnf=true;out.dl=S.lap;if(!S.sc)callSC(Math.floor(rnd(3,5)))}else{x.t+=5;say('rc_stew',{d:sh(G.drv[x.id])})}
@@ -221,12 +236,12 @@ function raceStep(){
  if(S.lap>=N){S.done=true;finish()}
 }
 function finish(){
- const o=rorder(),res=[],pts=S.spr?SPTS:PTS,fc=!S.spr?S.fl.id:null;let mine=0;
- o.forEach((c,p)=>{const d=G.drv[c.id];let pt=c.dnf?0:(pts[p]||0);const fl=fc==c.id&&!c.dnf&&p<10;if(fl)pt++;
+ const rs=['Underweight car','Illegal floor wear','Fuel sample irregularity','Rear wing flex'];rorder().filter(c=>!c.dnf).forEach(c=>{const d=G.drv[c.id];if(Math.random()<(d.t=='P'?.006:.004)){c.dsq=true;c.dsqr=rs[Math.floor(Math.random()*4)];if(d.t=='P')note(sh(d)+' DISQUALIFIED – '+c.dsqr)}});const o=[...rorder().filter(c=>!c.dnf&&!c.dsq),...rorder().filter(c=>c.dnf),...rorder().filter(c=>c.dsq)],res=[],pts=S.spr?SPTS:PTS,fc=!S.spr?S.fl.id:null;let mine=0;
+ o.forEach((c,p)=>{const d=G.drv[c.id];let pt=c.dnf||c.dsq?0:(pts[p]||0);const fl=fc==c.id&&!c.dnf&&!c.dsq&&p<10;if(fl)pt++;
   if(pt){G.dp[c.id]=(G.dp[c.id]||0)+pt;G.tp[d.t]=(G.tp[d.t]||0)+pt}
-  if(d.t=='P'){mine+=pt;if(!c.dnf&&!S.spr){if(p==0){G.career.w++;G.sw++}if(p<3){G.career.p++;note(sh(d)+' – podium P'+(p+1)+'!',784)}}if(fl)G.career.fl++}
+  if(d.t=='P'){mine+=pt;if(!c.dnf&&!c.dsq&&!S.spr){if(p==0){G.career.w++;G.sw++}if(p<3){G.career.p++;note(sh(d)+' – podium P'+(p+1)+'!',784)}}if(fl)G.career.fl++}
   res.push({c,p,pt,d,fl})});
- CV=0;RC=[];S.talk=myIds().map(i=>{const r=res.find(x=>x.d.id==i);if(!r)return'';const pen=S.ev.some(e=>(e[0]=='pen_own'||e[0]=='rc_stew')&&e[1]==sh(r.d));return convo(r.c.dnf?'race_dnf':pen?'race_pen':r.p==0?'race_win':r.p<3?'race_podium':r.p<10?'race_points':'race_out',r.d,r.p+1,r.c.dnf?'DNF':'P'+(r.p+1))}).join('');const prize=+((S.spr?1.5:4)+mine*(S.spr?.6:.8)+(mine?1:0)).toFixed(1);G.money+=prize;S.res=res;S.prize=prize;S.mine=mine;
+ CV=0;RC=[];S.talk=myIds().map(i=>{const r=res.find(x=>x.d.id==i);if(!r)return'';const pen=S.ev.some(e=>(e[0]=='pen_own'||e[0]=='rc_stew')&&e[1]==sh(r.d));return convo(r.c.dns?'race_dns':r.c.dsq?'race_dsq':r.c.dnf?'race_dnf':r.p==0?'race_win':r.p<3?'race_podium':pen?'race_pen':r.p<10?'race_points':'race_out',r.d,r.p+1,st(r.c)||'P'+(r.p+1))}).join('');const prize=+((S.spr?1.5:4)+mine*(S.spr?.6:.8)+(mine?1:0)).toFixed(1);G.money+=prize;S.res=res;S.prize=prize;S.mine=mine;
 }
 function push(){if(S.push>0&&S.boost==0){S.push--;S.boost=8;ctl()}}
 function ctl(){
@@ -239,7 +254,7 @@ function draw(){
  if(!$('#tbl'))return;const k=S.k;let h='';
  if(k=='R'){const o=rorder();
   $('#stt').textContent=`${C()[0]} GP · Lap ${S.lap}/${S.N} · ${WX[G.wk.wx]}${S.scNow?' · SAFETY CAR':''}`;$('#stt').style.color=S.scNow?'#facc15':'';$('#tmr').textContent='';$('#pg').style.width=S.lap/S.N*100+'%';
-  h='<table><tr><th>P</th><th>Driver</th><th>Gap</th><th>Tyre</th><th>Pits</th></tr>'+o.map((c,p)=>{const d=G.drv[c.id],T=TY[c.tyre];return `<tr data-id="${c.id}" class="${d.t=='P'?'me':''}"><td class="mono">${p+1}</td><td><span class="dot" style="background:${tc(d.t)}"></span>${sh(d)}${c.dnf?'':arr(c.g-(p+1))}${c.drs&&!S.scNow&&!c.dnf?' <span class="mono up">DRS</span>':''}${S.fl.id==c.id?' <span class="fl mono">FL</span>':''}</td><td class="mono">${c.dnf?'<span class="dn">DNF</span>':p?'+'+(c.t-o[0].t).toFixed(1):'LEAD'}</td><td class="mono">${c.dnf?'':`<span class="tb" style="color:${T.c};border-color:${T.c}">${c.tyre}</span>${Math.max(0,100-Math.round(c.w/T.l*100))}%`}</td><td class="mono">${c.pits}</td></tr>`}).join('')+'</table>';
+  h='<table><tr><th>P</th><th>Driver</th><th>Gap</th><th>Tyre</th><th>Pits</th></tr>'+o.map((c,p)=>{const d=G.drv[c.id],T=TY[c.tyre];return `<tr data-id="${c.id}" class="${d.t=='P'?'me':''}"><td class="mono">${p+1}</td><td><span class="dot" style="background:${tc(d.t)}"></span>${sh(d)}${c.dnf?'':arr(c.g-(p+1))}${c.drs&&!S.scNow&&!c.dnf?' <span class="mono up">DRS</span>':''}${S.fl.id==c.id?' <span class="fl mono">FL</span>':''}</td><td class="mono">${c.dnf?'<span class="dn">'+(c.dns?'DNS':'DNF')+'</span>':p?'+'+(c.t-o[0].t).toFixed(1):'LEAD'}</td><td class="mono">${c.dnf?'':`<span class="tb" style="color:${T.c};border-color:${T.c}">${c.tyre}</span>${Math.max(0,100-Math.round(c.w/T.l*100))}%`}</td><td class="mono">${c.pits}</td></tr>`}).join('')+'</table>';
  }else{
   const sec=k=='Q'?S.tick%50:S.tick,left=Math.max(0,20-sec*.4);
   $('#stt').textContent=k=='Q'?(S.sq?'Sprint Quali':'Qualifying')+' · Q'+(Math.min(S.seg,2)+1):'FP'+(G.wk.step+1);
@@ -250,18 +265,18 @@ function draw(){
  const T=$('#tbl'),old={};T.querySelectorAll('tr[data-id]').forEach(r=>old[r.dataset.id]=r.getBoundingClientRect().top);T.innerHTML=h;
  T.querySelectorAll('tr[data-id]').forEach(r=>{const o=old[r.dataset.id];if(o==null)return;const dy=o-r.getBoundingClientRect().top;if(Math.abs(dy)<2)return;
   r.animate([{transform:`translateY(${dy}px)`},{transform:'none'}],{duration:380,easing:'cubic-bezier(.2,.8,.2,1)'});})}
-function after(){if(S.k=='R'){V='res';save();render();return}G.wk.step++;V='hub';render()}
+function after(){restoreFP();if(S.k=='R'){V='res';save();render();return}G.wk.step++;V='hub';render()}
 function chart(){const N=S.N,W=840,H=380,pl=26,L=S.cars.length,x=l=>pl+(l-1)/(N-1||1)*(W-pl-60),y=p=>10+(p-1)/(L-1)*(H-30);let g='';
  for(let p=1;p<=L;p+=3)g+=`<text x="2" y="${y(p)+4}" fill="#8a90a0" font-size="10">${p}</text><line x1="${pl}" x2="${W-60}" y1="${y(p)}" y2="${y(p)}" stroke="#262a33"/>`;
  S.cars.slice().sort((a,b)=>(G.drv[a.id].t=='P')-(G.drv[b.id].t=='P')).forEach(c=>{const d=G.drv[c.id],h=S.ph[c.id]||[],me=d.t=='P';let pts='';h.forEach((p,i)=>{if(p!=null)pts+=`${x(i+1)},${y(p)} `});
   g+=`<polyline points="${pts}" fill="none" stroke="${tc(d.t)}" stroke-width="${me?3:1.2}" opacity="${me?1:.55}"/>`;const e=h.length-1;if(e>=0&&h[e]!=null)g+=`<text x="${x(e+1)+4}" y="${y(h[e])+3}" fill="${tc(d.t)}" font-size="10">${d.n.split(' ').pop().slice(0,3).toUpperCase()}</text>`});
  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;min-width:500px">${g}</svg>`}
 function resView(){
- $('#app').innerHTML=head()+`<div class="split"><div><div class="card"><h3>${C()[0]} GP – ${S.spr?'Sprint ':''}Results</h3><div class="wrap"><table>${S.res.map(r=>`<tr class="${r.d.t=='P'?'me':''}"><td class="mono">${r.c.dnf?'DNF':r.p+1}</td><td><span class="dot" style="background:${tc(r.d.t)}"></span>${r.d.n}${r.fl?' <span class="fl mono">FL +1</span>':''}</td><td class="m">${G.teams[r.d.t].n}</td><td class="mono">${r.c.used.map(u=>`<span class="tb" style="color:${TY[u].c};border-color:${TY[u].c}">${u}</span>`).join('')}</td><td class="mono up">${r.pt?'+'+r.pt:''}</td></tr>`).join('')}</table></div></div>
+ $('#app').innerHTML=head()+`<div class="split"><div><div class="card"><h3>${C()[0]} GP – ${S.spr?'Sprint ':''}Results</h3><div class="wrap"><table>${S.res.map(r=>`<tr class="${r.d.t=='P'?'me':''}"><td class="mono">${st(r.c)||r.p+1}</td><td><span class="dot" style="background:${tc(r.d.t)}"></span>${r.d.n}${r.fl?' <span class="fl mono">FL +1</span>':''}${r.c.dsq?` <span class="m">(${r.c.dsqr})</span>`:''}</td><td class="m">${G.teams[r.d.t].n}</td><td class="mono">${r.c.used.map(u=>`<span class="tb" style="color:${TY[u].c};border-color:${TY[u].c}">${u}</span>`).join('')}</td><td class="mono up">${r.pt?'+'+r.pt:''}</td></tr>`).join('')}</table></div></div>
  <div class="card"><h3>Position by lap</h3><div class="wrap">${chart()}</div></div></div><div class="side"><h3>Team radio</h3>${S.talk}</div></div>
  <div class="card">Your team scored <b>${S.mine} pts</b> · prize & sponsors <b class="up">+$${S.prize}M</b><br><br><button class="p" onclick="${S.spr?'afterSpr()':'nextRace()'}">${S.spr?'Continue':G.round>=23?'End Season':'Next Round'}</button></div>`}
 function afterSpr(){G.wk.step++;V='hub';save();render()}
-function nextRace(){G.news=rdTick();G.news.forEach(n=>note(n,520));Object.keys(G.teams).forEach(t=>{if(t!='P')G.teams[t].car=Math.min(97,G.teams[t].car+rnd(0,.3))});G.round++;if(G.round>=24)closeSeason();wk();V=G.round>=24?'end':'hub';TAB='race';save();render()}
+function nextRace(){myIds().forEach(i=>{const d=G.drv[i];if(d.ad!=null&&d.ad<1)d.ad=Math.min(1,d.ad+.14)});G.news=rdTick();G.news.forEach(n=>note(n,520));Object.keys(G.teams).forEach(t=>{if(t!='P')G.teams[t].car=Math.min(97,G.teams[t].car+rnd(0,.3))});G.round++;if(G.round>=24)closeSeason();wk();V=G.round>=24?'end':'hub';TAB='race';save();render()}
 function closeSeason(){
  const d=Object.keys(G.dp).map(Number).sort((a,b)=>G.dp[b]-G.dp[a]),t=Object.keys(G.teams).sort((a,b)=>(G.tp[b]||0)-(G.tp[a]||0)),my=G.tp.P||0;
  if(d.length&&G.drv[d[0]].t=='P')G.career.td++;if(t[0]=='P')G.career.tc++;G.career.best=Math.max(G.career.best,my);
@@ -270,13 +285,12 @@ function careerTab(){const c=G.career;return `<div class="card"><h3>Career</h3><
  <div class="card wrap"><h3>Season history</h3><table><tr><th>Season</th><th>Team</th><th>Pts</th><th>Wins</th><th>Drivers' champion</th><th>Constructors' champion</th></tr>${G.hist.length?G.hist.slice().reverse().map(h=>`<tr><td class="mono">${h.s}</td><td class="mono">P${h.pos}</td><td class="mono">${h.pts}</td><td class="mono">${h.w}</td><td>${h.dc} (${h.dcp})</td><td>${h.tc}</td></tr>`).join(''):'<tr><td class="m">No completed seasons yet</td></tr>'}</table></div>`}
 function acadTab(){
  const A=Object.values(G.drv).filter(d=>d.t=='A'),pool=Object.values(G.drv).filter(d=>d.t=='FA'&&d.s!='F1').sort((a,b)=>b.r-a.r).slice(0,20);
- return `<div class="card"><h3>Junior academy (${A.length}/3)</h3>${A.length?A.map(d=>`<div style="margin-bottom:10px"><div class="row"><b>${d.n}</b><span class="m">${d.s}</span><span class="sp"></span><span class="mono">OVR ${d.r}</span></div>${stats(d)}<div class="row" style="margin-top:6px"><button class="s" onclick="PR=${d.id};hub()">Promote to race seat</button><button class="s" onclick="G.drv[${d.id}].t='FA';hub()">Release</button></div></div>`).join(''):'<div class="m">Empty. Academy drivers grow faster every season.</div>'}</div>
+ return `<div class="card"><h3>Junior academy (${A.length}/3)</h3><div class="m" style="margin-bottom:8px">Academy drivers can run in Free Practice (Race tab) to gain stats. Promoted drivers start partly adapted.</div>${A.length?A.map(d=>`<div style="margin-bottom:10px"><div class="row"><b>${d.n}</b><span class="m">${d.s}</span><span class="sp"></span><span class="mono">OVR ${d.r}</span></div>${stats(d)}<div class="row" style="margin-top:6px"><button class="s" onclick="PR=${d.id};hub()">Promote to race seat</button><button class="s" onclick="G.drv[${d.id}].t='FA';hub()">Release</button></div></div>`).join(''):'<div class="m">Empty. Academy drivers grow faster every season.</div>'}</div>
  <div class="card wrap"><h3>Talent pool</h3><table>${pool.map(d=>`<tr><td>${d.n}</td><td class="m">${d.s}</td><td class="mono">${d.r}</td><td>${stats(d)}</td><td class="mono">$${Math.max(1,Math.round(price(d)/2))}M</td><td><button class="s" onclick="signA(${d.id})">Sign</button></td></tr>`).join('')}</table></div>
  ${PR!=null?`<div class="mod"><div class="card"><h2>Promote ${G.drv[PR].n}</h2><p class="m">Which driver does he replace? The replaced driver becomes a free agent.</p>${myIds().map(i=>`<button style="width:100%;margin-bottom:8px" onclick="promote(${PR},${i})">Replace ${G.drv[i].n}</button>`).join('')}<button onclick="PR=null;hub()">Cancel</button></div></div>`:''}`}
 function signA(id){const d=G.drv[id];if(Object.values(G.drv).filter(x=>x.t=='A').length>=3)return toast('Academy full');if(!spend(Math.max(1,Math.round(price(d)/2))))return;d.t='A';hub()}
-function promote(a,m){const x=G.drv[a],b=G.drv[m];Object.values(G.eng).forEach(e=>{if(e.dv==m)e.dv=null});b.t='FA';x.t='P';PR=null;note(x.n+' promoted to the race team!',660);hub()}
-function mapHTML(){const R=Math.min(G.round,23);return `<div class="map"><img id="mapimg" alt="">${D.circuits.map((x,i)=>`<button class="mk ${i<R?'done':i==R?'cur':''}" id="mk${i}" style="left:${(x[4]+180)/3.6}%;top:${(90-x[3])/1.8}%" onclick="gfocus(${i})" title="${x[0]}"></button>`).join('')}<div id="tip" class="tip" style="display:none"></div></div>`}
-function loadMap(){const im=$('#mapimg');if(!im)return;const U=['earth.jpg','https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57752/land_shallow_topo_2048.jpg','https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg'];let i=0;const t=()=>{if(i>=U.length)return;im.onerror=()=>{i++;t()};im.onload=()=>im.classList.add('ok');im.src=U[i]};t()}
+function promote(a,m){const x=G.drv[a],b=G.drv[m];Object.values(G.eng).forEach(e=>{if(e.dv==m)e.dv=null});b.t='FA';delete b.ad;x.t='P';x.ad=.6;PR=null;note(x.n+' promoted to the race team!',660);hub()}
+function mapHTML(){const R=Math.min(G.round,23);return `<div class="map">${D.circuits.map((x,i)=>`<button class="mk ${i<R?'done':i==R?'cur':''}" id="mk${i}" style="left:${(x[4]+180)/3.6}%;top:${(90-x[3])/1.8}%" onclick="gfocus(${i})" title="${x[0]}"></button>`).join('')}<div id="tip" class="tip" style="display:none"></div></div>`}
 function gfocus(i){const x=D.circuits[i],e=$('#ginfo'),tp=$('#tip');if(e)e.innerHTML=`<b style="color:var(--t)">${x[0]} GP</b> · ${x[5]} · ${x[1]} laps${SPRINT.includes(i)?' · Sprint weekend':''}`;
  document.querySelectorAll('.mk').forEach(m=>m.classList.toggle('sel',m.id=='mk'+i));
  if(tp){tp.style.display='block';tp.textContent=x[0];tp.style.left=clamp((x[4]+180)/3.6,12,88)+'%';tp.style.top=(90-x[3])/1.8+'%';tp.style.animation='none';tp.offsetWidth;tp.style.animation=''}}
@@ -305,7 +319,7 @@ function newSeason(){
  pool.forEach((d,k)=>{d.t=k<slots.length?slots[k]:'FA';delete d._s});
  G.news=pool.filter(d=>d.t!=old[d.id]).sort((a,b)=>b.r-a.r).slice(0,8).map(d=>`${d.n}: ${old[d.id]=='FA'?'Free agent':G.teams[old[d.id]].n} → ${d.t=='FA'?'Free agent':G.teams[d.t].n}`);
  G.season++;G.round=0;G.dp={};G.tp={};G.money+=20;G.spent=0;G.sw=0;if(G.season>=G.regYear)regChange();wk();V='hub';TAB='race';save();render()}
-Promise.all([fetch('data.json').then(r=>r.json()),fetch('dialog.json').then(r=>r.json()).catch(()=>({}))]).then(([d,dl])=>{D=d;DLG=dl;
+Promise.all([fetch('data.json').then(r=>r.json()),fetch('dialog.json').then(r=>r.json()).catch(()=>({})),fetch('countries.json').then(r=>r.json()).catch(()=>({}))]).then(([d,dl,ct])=>{D=d;DLG=dl;CT=ct;
  const o=localStorage.getItem('pitwall_save');if(o){if(!localStorage.getItem(SK(1)))localStorage.setItem(SK(1),o);localStorage.removeItem('pitwall_save')}
  const sv=localStorage.getItem(SK(SLOT)),su=localStorage.getItem(SETUP);
  if(su){const x=JSON.parse(su);SLOT=x.slot||SLOT;localStorage.setItem('pitwall_slot',SLOT);localStorage.removeItem(SETUP);build(x)}
