@@ -2,6 +2,9 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Pit Wall – Team Setup</title>
+<link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.6.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
+<link rel="stylesheet" href="ui.css">
+<script src="ui.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#0b0c0f;--s:#14161b;--s2:#1b1e25;--b:#262a33;--t:#e8eaf0;--m:#8a90a0;--a:#e10600;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -36,30 +39,30 @@ const ecost=e=>lerp((e[1]+e[2]+e[3])/3,D.meta.eng.avg,D.meta.eng.cost);
 const pcost=p=>lerp((p[2]+p[3]+p[4])/3,D.meta.pu.avg,D.meta.pu.cost);
 const spent=()=>S.drv.reduce((s,i)=>s+dcost(D.drivers[i])+(S.eng[i]!=null?ecost(D.engineers[S.eng[i]]):0),0)+(S.pu!=null?pcost(D.pu[S.pu]):0);
 const left=()=>D.budget-spent();
-const ic='<svg class="i" viewBox="0 0 24 24"><path d="M4 22V4M4 4c3-2 6 2 9 0s5-1 7 0v9c-2-1-4-1-7 0s-6-2-9 0"/></svg>';
+const ic='<i class="fi fi-rr-flag"></i>';
 function head(){return `<h1>${ic} PIT WALL</h1><div class="steps">${['1 · Team','2 · Drivers & Engineers','3 · Power Unit'].map((s,i)=>`<div class="st ${i==step?'c':i<step?'d':''}">${s}</div>`).join('')}</div>`}
 function pts(){const l=left();return `<span class="pts mono">Points left: <b class="${l<0?'neg':''}">${l}</b> / ${D.budget}</span>`}
 function render(){
  let h=head();
  if(step==0){
   h+=`<div class="card"><h3>Save slots</h3>${[1,2,3].map(n=>{const r=localStorage.getItem(SK(n));let i='Empty';try{if(r){const g=JSON.parse(r);i=`${g.name} · S${g.season} R${Math.min(g.round+1,24)}`}}catch(e){}return `<div class="row" style="margin-bottom:8px"><b>Slot ${n}</b><span class="m sp">${i}</span>${r?`<button class="s" onclick="localStorage.setItem('pitwall_slot',${n});location.href='sim.html'">Continue</button><button class="s" onclick="if(confirm('Delete slot ${n}?')){localStorage.removeItem(SK(${n}));render()}">Delete</button>`:''}</div>`}).join('')}<label class="s" style="cursor:pointer;border:1px solid var(--b);border-radius:10px;padding:5px 9px;display:inline-block">Import save<input type="file" accept=".json" hidden onchange="imp(this)"></label></div>
-  <div class="card"><h3>Team name</h3><input value="${S.name}" maxlength="22" placeholder="e.g. Apex Racing" oninput="S.name=this.value;$('#nx').disabled=!(S.name.trim()&&CM[S.country])"><h3 style="margin-top:14px">Base country</h3><input list="cl" value="${S.country}" placeholder="Type to search 190 countries" oninput="setC(this.value)"><datalist id="cl">${Object.keys(CM).map(c=>`<option value="${c}">`).join('')}</datalist><div id="cn" class="m" style="margin-top:6px">${S.country&&CM[S.country]?'Your drivers celebrate podiums in '+CT.ln[CM[S.country]]+'.':''}</div>
+  <div class="card"><h3>Team name</h3><input value="${S.name}" maxlength="22" placeholder="e.g. Apex Racing" oninput="S.name=this.value;$('#nx').disabled=!(S.name.trim()&&CM[S.country])"><h3 style="margin-top:14px">Base country</h3>${dd('country',Object.keys(CM).map(c=>({v:c,l:c,s:CT.ln[CM[c]]})),S.country,v=>{setC(v);render()},'Select country')}<div id="cn" class="m" style="margin-top:6px">${S.country&&CM[S.country]?'Your drivers celebrate podiums in '+CT.ln[CM[S.country]]+'.':''}</div>
   <div class="row" style="margin-top:12px">${['#e10600','#00d2be','#ff8000','#3671c6','#a855f7','#facc15'].map(c=>`<button class="sw ${c==S.color?'on':''}" style="background:${c}" onclick="S.color='${c}';document.documentElement.style.setProperty('--a',S.color);render()"></button>`).join('')}</div></div>
-  <button id="nx" class="p" ${S.name.trim()&&CM[S.country]?'':'disabled'} onclick="step=1;render()">Next</button>`;
+  <div class="nav"><button id="nx" class="p" ${S.name.trim()&&CM[S.country]?'':'disabled'} onclick="step=1;render()">Next</button></div>`;
  }
  if(step==1){
   const L=D.drivers.map((d,i)=>[d,i]).filter(x=>F=='All'||x[0][1]==F).sort((a,b)=>dcost(b[0])-dcost(a[0]));
   h+=`<div class="row" style="margin-bottom:12px"><h3 style="margin:0">Pick exactly 2 drivers (${S.drv.length}/2)</h3><span class="sp"></span>${pts()}</div>
   <div class="card"><h3>Your lineup</h3>${[0,1].map(k=>{const i=S.drv[k];if(i==null)return `<div class="m" style="margin-bottom:8px">Slot ${k+1}: empty</div>`;const d=D.drivers[i];
-   return `<div class="row" style="margin-bottom:8px"><b>${d[0]}</b><span class="m mono">${d[1]} · ${dcost(d)} pts</span><span class="sp"></span><span class="m">Race engineer:</span><select onchange="S.eng[${i}]=this.value===''?null:+this.value;render()"><option value="">None</option>${D.engineers.map((e,j)=>{const used=S.drv.some(x=>x!=i&&S.eng[x]===j);return `<option value="${j}" ${S.eng[i]===j?'selected':''} ${used?'disabled':''}>${e[0]} · A${e[1]} D${e[2]} T${e[3]} · ${ecost(e)} pts</option>`}).join('')}</select></div>`}).join('')}</div>
+   return `<div class="row" style="margin-bottom:8px"><b>${d[0]}</b><span class="m mono">${d[1]} · ${dcost(d)} pts</span><span class="sp"></span><span class="m">Race engineer:</span>${dd('eng'+i,[{v:'',l:'None'},...D.engineers.map((e,j)=>({v:j,l:e[0],s:`ATT ${e[1]} · DEF ${e[2]} · TYR ${e[3]} · ${ecost(e)} pts`,dis:S.drv.some(x=>x!=i&&S.eng[x]===j)}))],S.eng[i]==null?'':S.eng[i],v=>{S.eng[i]=v===''?null:+v;render()},'Select engineer')}</div>`}).join('')}</div>
   <div class="row" style="margin-bottom:8px">${['All','F1','F2','F3'].map(f=>`<button class="s ${F==f?'on':''}" onclick="F='${f}';render()">${f}</button>`).join('')}</div>
-  <div class="card wrap"><table><tr><th>Driver</th><th>Series</th><th>OVR</th><th class="hm">ATT</th><th class="hm">DEF</th><th class="hm">TYR</th><th class="hm">COR</th><th>Cost</th><th></th></tr>${L.map(([d,i])=>`<tr class="${S.drv.includes(i)?'sel':''}"><td>${d[0]}</td><td class="m">${d[1]}</td><td class="mono">${d[2]}</td><td class="mono hm">${d[3]}</td><td class="mono hm">${d[4]}</td><td class="mono hm">${d[5]}</td><td class="mono hm">${d[6]}</td><td class="mono">${dcost(d)}</td><td><button class="s" onclick="pick(${i})">${S.drv.includes(i)?'Remove':'Pick'}</button></td></tr>`).join('')}</table></div>
-  <div class="row"><button onclick="step=0;render()">Back</button><button class="p" ${S.drv.length==2&&left()>=0?'':'disabled'} onclick="step=2;render()">Next</button></div>`;
+  ${isM()?`${L.map(([d,i])=>`<div class="dc2 ${S.drv.includes(i)?'sel':''}" onclick="pick(${i})"><div class="row"><b class="sp">${d[0]}</b><span class="chip">${d[1]}</span></div><div class="row mono m"><span>OVR ${d[2]}</span><span>ATT ${d[3]}</span><span>DEF ${d[4]}</span><span>TYR ${d[5]}</span><span>COR ${d[6]}</span></div><div class="row"><b class="cost">${dcost(d)} pts</b><span class="sp"></span><button class="s ${S.drv.includes(i)?'on':''}">${S.drv.includes(i)?'Selected':'Pick'}</button></div></div>`).join('')}`:`<div class="card wrap"><table><tr><th>Driver</th><th>Series</th><th>OVR</th><th class="hm">ATT</th><th class="hm">DEF</th><th class="hm">TYR</th><th class="hm">COR</th><th>Cost</th><th></th></tr>${L.map(([d,i])=>`<tr class="${S.drv.includes(i)?'sel':''}"><td>${d[0]}</td><td class="m">${d[1]}</td><td class="mono">${d[2]}</td><td class="mono hm">${d[3]}</td><td class="mono hm">${d[4]}</td><td class="mono hm">${d[5]}</td><td class="mono hm">${d[6]}</td><td class="mono">${dcost(d)}</td><td><button class="s" onclick="pick(${i})">${S.drv.includes(i)?'Remove':'Pick'}</button></td></tr>`).join('')}</table></div>`}
+  <div class="row nav"><button onclick="step=0;render()">Back</button><button class="p" ${S.drv.length==2&&left()>=0?'':'disabled'} onclick="step=2;render()">Next</button></div>`;
  }
  if(step==2){
   h+=`<div class="row" style="margin-bottom:12px"><h3 style="margin:0">Choose a power unit</h3><span class="sp"></span>${pts()}</div>
   <div class="grid" style="margin-bottom:12px">${D.pu.map((p,i)=>`<div class="pc ${S.pu===i?'sel':''}" onclick="S.pu=${i};render()"><div class="row"><b>${p[1]}</b><span class="sp"></span><span class="mono">${pcost(p)} pts</span></div><div class="mono m" style="margin-top:8px">POWER <b style="color:var(--t)">${p[2]}</b> · RELIABILITY <b style="color:var(--t)">${p[3]}</b> · EFFICIENCY <b style="color:var(--t)">${p[4]}</b></div></div>`).join('')}</div>
-  <div class="row" style="margin-bottom:12px"><span class="m">Save slot:</span><select onchange="SLOT=+this.value">${[1,2,3].map(n=>`<option value="${n}" ${SLOT==n?'selected':''}>Slot ${n}${localStorage.getItem(SK(n))?' (in use)':' (empty)'}</option>`).join('')}</select></div><div class="row"><button onclick="step=1;render()">Back</button><button class="p" ${S.pu!=null&&left()>=0?'':'disabled'} onclick="start()">Start career</button></div>`;
+  <div class="row" style="margin-bottom:12px"><span class="m">Save slot:</span>${dd('slot',[1,2,3].map(n=>({v:n,l:'Slot '+n,s:localStorage.getItem(SK(n))?'In use – will be overwritten':'Empty'})),SLOT,v=>{SLOT=+v;render()})}</div><div class="row nav"><button onclick="step=1;render()">Back</button><button class="p" ${S.pu!=null&&left()>=0?'':'disabled'} onclick="start()">Start career</button></div>`;
  }
  $('#app').innerHTML=h;
 }
