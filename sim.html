@@ -144,7 +144,7 @@ function hub(){
   <div class="card wrap"><h3>Engineer market</h3><table>${mk.map(e=>`<tr><td>${e.n}</td><td>${estats(e)}</td><td class="mono">$${ecost(e)}M</td><td><button class="s" onclick="hire(${e.id})">Hire</button></td></tr>`).join('')}</table></div>`;
  }
  if(TAB=='car')h+=carTab();if(TAB=='acad')h+=acadTab();if(TAB=='cr')h+=careerTab();if(SM)h+=savesModal();
- $('#app').innerHTML=h;if(MENU)bindDrawer();if(TAB=='race')gfocus(Math.min(G.round,23));
+ $('#app').innerHTML=h+bnav();if(MENU)bindDrawer();if(TAB=='race')gfocus(Math.min(G.round,23));
 }
 const pcost=(p,l)=>Math.round(5+l*3+Object.values(p.e).reduce((a,b)=>a+b,0)*2),pch=l=>clamp(.65+G.wt*.05-l*.04,.3,.95);
 function carTab(){
@@ -299,13 +299,13 @@ function acadTab(){
  ${PR!=null?`<div class="mod"><div class="card"><h2>Promote ${G.drv[PR].n}</h2><p class="m">Which driver does he replace? The replaced driver becomes a free agent.</p>${myIds().map(i=>`<button style="width:100%;margin-bottom:8px" onclick="promote(${PR},${i})">Replace ${G.drv[i].n}</button>`).join('')}<button onclick="PR=null;hub()">Cancel</button></div></div>`:''}`}
 function signA(id){const d=G.drv[id];if(Object.values(G.drv).filter(x=>x.t=='A').length>=3)return toast('Academy full');if(!spend(Math.max(1,Math.round(price(d)/2))))return;d.t='A';hub()}
 function promote(a,m){const x=G.drv[a],b=G.drv[m];Object.values(G.eng).forEach(e=>{if(e.dv==m)e.dv=null});b.t='FA';delete b.ad;x.t='P';x.ad=.6;PR=null;note(x.n+' promoted to the race team!',660);hub()}
-function bindDrawer(){const d=$('.drw');if(!d)return;let x0=null,dx=0;
+function bindDrawer(){const d=$('.drw');if(!d)return;const R=isM();let x0=null,dx=0;
  d.addEventListener('touchstart',e=>{x0=e.touches[0].clientX;dx=0;d.style.transition='none'},{passive:true});
- d.addEventListener('touchmove',e=>{dx=Math.min(0,e.touches[0].clientX-x0);d.style.transform=`translateX(${dx}px)`},{passive:true});
- d.addEventListener('touchend',()=>{d.style.transition='transform .25s';if(dx<-70){d.style.transform='translateX(-110%)';setTimeout(()=>{MENU=false;hub()},200)}else d.style.transform='';x0=null},{passive:true})}
-function swipe(dir,x){if(V!='hub'||!isM())return;if(dir=='right'&&x<30&&!MENU){MENU=true;hub()}else if(dir=='left'&&MENU){MENU=false;hub()}}
-function bnav(){const it=[['race','flag','Race'],['std','trophy','Table'],['mkt','users','Drivers'],['car','settings','Car'],['more','menu-burger','More']];
- return `<nav class="bnav">${it.map(t=>`<button class="${TAB==t[0]||(t[0]=='more'&&['eng','acad','cr'].includes(TAB))?'on':''}" onclick="${t[0]=='more'?'MENU=true;hub()':`TAB='${t[0]}';MENU=false;hub()`}"><i class="fi fi-rr-${t[1]}"></i><span>${t[2]}</span></button>`).join('')}</nav>`}
+ d.addEventListener('touchmove',e=>{const v=e.touches[0].clientX-x0;dx=R?Math.max(0,v):Math.min(0,v);d.style.transform=`translateX(${dx}px)`},{passive:true});
+ d.addEventListener('touchend',()=>{d.style.transition='transform .25s';if(Math.abs(dx)>70){d.style.transform=`translateX(${R?110:-110}%)`;setTimeout(()=>{MENU=false;hub()},200)}else d.style.transform='';x0=null},{passive:true})}
+function swipe(dir,x){if(V!='hub'||!isM())return;if(dir=='left'&&x>innerWidth-30&&!MENU){MENU=true;hub()}else if(dir=='right'&&MENU){MENU=false;hub()}}
+function bnav(){const it=[['race','flag','Race'],['std','trophy','Standings'],['cr','chart-histogram','Career'],['more','menu-burger','More']];
+ return `<nav class="bnav">${it.map(t=>`<button class="${TAB==t[0]||(t[0]=='more'&&MENU)||(t[0]=='more'&&['mkt','eng','car','acad'].includes(TAB))?'on':''}" onclick="${t[0]=='more'?'MENU=true;hub()':`TAB='${t[0]}';MENU=false;hub()`}"><i class="fi fi-rr-${t[1]}"></i><span>${t[2]}</span></button>`).join('')}</nav>`}
 const mCard=d=>`<div class="dc2"><div class="row"><span class="dot" style="background:${d.t=='FA'?'#555':tc(d.t)}"></span><b class="sp">${d.n}</b><span class="chip">${d.s}</span></div><div class="row mono m"><span>OVR ${d.r}</span><span>ATT ${d.att}</span><span>DEF ${d.def}</span><span>TYR ${d.tyr}</span><span>COR ${d.cor}</span></div><div class="row"><span class="m sp">${d.t=='FA'?'Free agent':G.teams[d.t].n}</span><b class="cost">$${price(d)}M</b><button class="s p" onclick="TR=${d.id};hub()">Recruit</button></div></div>`;
 function mapHTML(){const R=Math.min(G.round,23);return `<div class="map">${D.circuits.map((x,i)=>`<button class="mk ${i<R?'done':i==R?'cur':''}" id="mk${i}" style="left:${(x[4]+180)/3.6}%;top:${(90-x[3])/1.8}%" onclick="gfocus(${i})" title="${x[0]}"></button>`).join('')}<div id="tip" class="tip" style="display:none"></div></div>`}
 function gfocus(i){const x=D.circuits[i],e=$('#ginfo'),tp=$('#tip');if(e)e.innerHTML=`<b style="color:var(--t)">${x[0]} GP</b> · ${x[5]} · ${x[1]} laps${SPRINT.includes(i)?' · Sprint weekend':''}`;
