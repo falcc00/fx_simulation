@@ -13,3 +13,7 @@ function ddPick(id,i){const d=DD[id];ddClose();d.cb(d.opts[i].v)}
 function ddClose(){if(DDO){DDO.remove();DDO=null}}
 document.addEventListener('keydown',e=>{if(e.key=='Escape')ddClose()});
 matchMedia('(max-width:700px)').addEventListener('change',()=>{ddClose();try{render()}catch(e){}});
+/* edge swipe: opens/closes the tab drawer on mobile (swipe() is defined by sim.html) */
+let TX=null;
+document.addEventListener('touchstart',e=>{TX={x:e.touches[0].clientX,y:e.touches[0].clientY}},{passive:true});
+document.addEventListener('touchend',e=>{if(!TX)return;const t=e.changedTouches[0],dx=t.clientX-TX.x,dy=t.clientY-TX.y,s=TX;TX=null;if(Math.abs(dx)<60||Math.abs(dy)>Math.abs(dx)*.7)return;if(typeof swipe=='function')swipe(dx>0?'right':'left',s.x)},{passive:true});
